@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Chronex Classes</title>
+    <!-- Web App Manifest for Mobile App Experience -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e8d4f3">
+    <link rel="icon" type="image/png" href="Logo_2.png" />
+    
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #faf8f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
@@ -28,6 +33,7 @@
         <div class="signup-text" id="status-text">Sign up with</div>
         
         <div class="social-login">
+            <!-- Google Sign In Button -->
             <button id="google-login-btn" class="icon-btn" aria-label="Sign up with Google">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="social-icon">
                     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.7 17.74 9.5 24 9.5z"/>
@@ -37,6 +43,7 @@
                 </svg>
             </button>
             
+            <!-- Microsoft Sign In Button (Placeholder for future) -->
             <button class="icon-btn" aria-label="Sign up with Microsoft">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" class="social-icon">
                     <rect x="2" y="2" width="8" height="8" fill="#f25022"/>
@@ -50,21 +57,22 @@
         <div id="error-msg"></div>
     </div>
 
+    <!-- Firebase and Logic Scripts -->
     <script type="module">
         import { signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
         
         import { auth, db } from "./firebase-setup.js";
 
-        // 🔗 TOR NOTUN MEGA BACKEND LINK
-        const BACKEND_URL = "https://chronex-api-server.onrender.com"; 
+        // 🔗 NEW CONNECTION: Pointing to your Custom Render Backend
+        const BACKEND_URL = "https://chronex-api-server.onrender.com";
 
         const googleProvider = new GoogleAuthProvider();
         const googleBtn = document.getElementById('google-login-btn');
         const statusText = document.getElementById('status-text');
         const errorMsg = document.getElementById('error-msg');
 
-        // Function: Generates a unique device fingerprint to prevent multiple logins
+        // Function 1: Generates a unique device fingerprint to prevent multiple logins (Account Sharing Block)
         async function getDeviceFingerprint() {
             try {
                 const fpPromise = await import('https://openfpcdn.io/fingerprintjs/v4');
@@ -85,13 +93,13 @@
             }
         }
 
-        // Function: Process the user after successful Google authentication
+        // Function 2: Process the user after successful Google authentication
         async function processUserLogin(user) {
             statusText.innerText = "Account Verified. Checking Security...";
             errorMsg.style.display = 'none';
 
             try {
-                // 1. Device and Banning Security Check (Firebase)
+                // --- SECURITY LAYER 1 & 2: DEVICE CHECK & BAN CHECK (FIREBASE) ---
                 const currentDeviceId = await getDeviceFingerprint();
                 statusText.innerText = "Connecting to Security Database...";
                 
@@ -101,46 +109,50 @@
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data();
 
+                    // Check if user is banned (Caught in Honeypot Trap)
                     if (userData.isBanned === true) {
                         await signOut(auth);
                         errorMsg.style.display = 'block';
                         errorMsg.innerHTML = "<b>Account Suspended:</b> You have been permanently blocked from this platform for unauthorized activities.";
                         statusText.innerText = "Login Blocked";
-                        return; 
+                        return; // Stop execution entirely
                     }
 
+                    // Standard Device Verification
                     const storedDeviceId = userData.deviceId;
                     if (storedDeviceId !== currentDeviceId) {
                         await signOut(auth);
                         errorMsg.style.display = 'block';
                         errorMsg.innerHTML = "<b>Access Denied:</b> This account is already registered on another device.";
                         statusText.innerText = "Login Blocked";
-                        return;
+                        return; // Stop execution entirely
                     } 
                 } else {
                     statusText.innerText = "Registering New Device...";
+                    // Save new user device data to Firebase
                     await setDoc(userDocRef, {
                         email: user.email,
                         deviceId: currentDeviceId,
                         registeredAt: new Date(),
-                        isBanned: false
+                        isBanned: false // Default to not banned
                     });
                 }
 
-                // 2. THE MASTERPLAN ROUTING (Mega Backend Check)
+                // --- SMART ROUTING: THE MEGA BACKEND CHECK ---
                 statusText.innerText = "Checking Student Profile...";
                 
+                // Asking the Render Server if the student's details are stored in MongoDB
                 const checkResponse = await fetch(`${BACKEND_URL}/api/students/check/${user.email}`);
                 const checkData = await checkResponse.json();
 
                 if (checkData.isRegistered) {
-                    // Purono student: Data aache, tai direct Home Page!
+                    // Old student with data in MongoDB -> Go direct to Home
                     statusText.innerText = "Welcome Back! Opening Home Page...";
                     setTimeout(() => {
                         window.location.replace("home.html");
                     }, 500);
                 } else {
-                    // Notun student: Data nei, tai ghaar dhore Setup Page-e pathabe!
+                    // New student, needs to fill form in MongoDB -> Send to Setup
                     statusText.innerText = "Profile Incomplete. Redirecting to Setup...";
                     setTimeout(() => {
                         window.location.replace("setup.html");
@@ -148,14 +160,15 @@
                 }
 
             } catch (err) {
+                console.error(err);
                 errorMsg.style.display = 'block';
-                errorMsg.innerHTML = "<b>System Error:</b> Failed to connect to server. " + err.message;
+                errorMsg.innerHTML = "<b>System Error:</b> Failed to connect to secure server. Please try again later.";
                 statusText.innerText = "Error Occurred";
                 await signOut(auth); 
             }
         }
 
-        // STEP 1: Handle users returning from the Backup Redirect Method
+        // Handle users returning from the Backup Redirect Method
         getRedirectResult(auth).then((result) => {
             if (result && result.user) {
                 statusText.innerText = "Login restored successfully! Processing...";
@@ -167,16 +180,17 @@
             statusText.innerText = "Sign up with";
         });
 
-        // STEP 2: Listen for Authentication State Changes
+        // Listen for Authentication State Changes (Main Trigger)
         onAuthStateChanged(auth, (user) => {
             if (user) {
+                // If user is already logged in, process them
                 processUserLogin(user);
             } else {
                 statusText.innerText = "Sign up with";
             }
         });
 
-        // STEP 3: Hybrid Login Logic (Popup first, Redirect as Backup)
+        // Hybrid Login Logic (Popup first, Redirect as Backup)
         if (googleBtn) {
             googleBtn.addEventListener('click', () => {
                 errorMsg.style.display = 'none';
@@ -189,6 +203,7 @@
                     .catch((error) => {
                         console.warn("Popup blocked or failed. Switching to Redirect...", error);
                         
+                        // Fallback for mobile browsers blocking popups
                         if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request' || error.code === 'auth/internal-error') {
                             statusText.innerText = "Popup blocked. Using secure redirect...";
                             signInWithRedirect(auth, googleProvider).catch((err) => {
