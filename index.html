@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Chronex Classes</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #faf8f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-box { background-color: white; padding: 30px 20px; border-radius: 12px; box-shadow: 0px 8px 24px rgba(114, 75, 145, 0.08); text-align: center; width: 90%; max-width: 400px; }
+        .logo { width: 100px; margin-bottom: 10px; }
+        h2 { color: #724b91; margin-top: 0; margin-bottom: 30px; font-size: 24px; }
+        .signup-text { color: #666; font-size: 14px; margin-bottom: 20px; position: relative; font-weight: 500;}
+        .signup-text::before, .signup-text::after { content: ""; display: inline-block; width: 25%; height: 1px; background-color: #ddd; vertical-align: middle; margin: 0 10px; }
+        .social-login { display: flex; justify-content: center; gap: 25px; }
+        .icon-btn { background-color: white; border: 1px solid #ddd; border-radius: 50%; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0px 2px 5px rgba(0,0,0,0.05); }
+        .icon-btn:hover { border-color: #724b91; box-shadow: 0px 4px 10px rgba(114, 75, 145, 0.15); transform: translateY(-2px); }
+        .social-icon { width: 30px; height: 30px; }
+        #error-msg { color: #d32f2f; font-size: 13px; margin-top: 15px; display: none; font-weight: 500; background: #ffebee; padding: 10px; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+    <div class="login-box">
+        <img src="Logo_2.png" alt="Chronex Classes Logo" class="logo" onerror="this.style.display='none'">
+        <h2>Chronex Classes</h2>
+        
+        <div class="signup-text" id="status-text">Sign up with</div>
+        
+        <div class="social-login">
+            <button id="google-login-btn" class="icon-btn" aria-label="Sign up with Google">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="social-icon">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.7 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+            </button>
+            
+            <button class="icon-btn" aria-label="Sign up with Microsoft">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" class="social-icon">
+                    <rect x="2" y="2" width="8" height="8" fill="#f25022"/>
+                    <rect x="11" y="2" width="8" height="8" fill="#7fba00"/>
+                    <rect x="2" y="11" width="8" height="8" fill="#00a4ef"/>
+                    <rect x="11" y="11" width="8" height="8" fill="#ffb900"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div id="error-msg"></div>
+    </div>
+
+    <script type="module">
+        import { signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        
+        import { auth, db } from "./firebase-setup.js";
+
+        // 🔗 TOR NOTUN MEGA BACKEND LINK
+        const BACKEND_URL = "https://chronex-api-server.onrender.com"; 
+
+        const googleProvider = new GoogleAuthProvider();
+        const googleBtn = document.getElementById('google-login-btn');
+        const statusText = document.getElementById('status-text');
+        const errorMsg = document.getElementById('error-msg');
+
+        // Function: Generates a unique device fingerprint to prevent multiple logins
+        async function getDeviceFingerprint() {
+            try {
+                const fpPromise = await import('https://openfpcdn.io/fingerprintjs/v4');
+                const fp = await Promise.race([
+                    fpPromise.default.load(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 4000))
+                ]);
+                const result = await fp.get();
+                return result.visitorId;
+            } catch (error) {
+                console.warn("Tracker Blocked by browser! Using Fallback ID...");
+                let fallbackId = localStorage.getItem('device_fallback_id');
+                if (!fallbackId) {
+                    fallbackId = 'device_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+                    localStorage.setItem('device_fallback_id', fallbackId);
+                }
+                return fallbackId;
+            }
+        }
+
+        // Function: Process the user after successful Google authentication
+        async function processUserLogin(user) {
+            statusText.innerText = "Account Verified. Checking Security...";
+            errorMsg.style.display = 'none';
+
+            try {
+                // 1. Device and Banning Security Check (Firebase)
+                const currentDeviceId = await getDeviceFingerprint();
+                statusText.innerText = "Connecting to Security Database...";
+                
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+
+                    if (userData.isBanned === true) {
+                        await signOut(auth);
+                        errorMsg.style.display = 'block';
+                        errorMsg.innerHTML = "<b>Account Suspended:</b> You have been permanently blocked from this platform for unauthorized activities.";
+                        statusText.innerText = "Login Blocked";
+                        return; 
+                    }
+
+                    const storedDeviceId = userData.deviceId;
+                    if (storedDeviceId !== currentDeviceId) {
+                        await signOut(auth);
+                        errorMsg.style.display = 'block';
+                        errorMsg.innerHTML = "<b>Access Denied:</b> This account is already registered on another device.";
+                        statusText.innerText = "Login Blocked";
+                        return;
+                    } 
+                } else {
+                    statusText.innerText = "Registering New Device...";
+                    await setDoc(userDocRef, {
+                        email: user.email,
+                        deviceId: currentDeviceId,
+                        registeredAt: new Date(),
+                        isBanned: false
+                    });
+                }
+
+                // 2. THE MASTERPLAN ROUTING (Mega Backend Check)
+                statusText.innerText = "Checking Student Profile...";
+                
+                const checkResponse = await fetch(`${BACKEND_URL}/api/students/check/${user.email}`);
+                const checkData = await checkResponse.json();
+
+                if (checkData.isRegistered) {
+                    // Purono student: Data aache, tai direct Home Page!
+                    statusText.innerText = "Welcome Back! Opening Home Page...";
+                    setTimeout(() => {
+                        window.location.replace("home.html");
+                    }, 500);
+                } else {
+                    // Notun student: Data nei, tai ghaar dhore Setup Page-e pathabe!
+                    statusText.innerText = "Profile Incomplete. Redirecting to Setup...";
+                    setTimeout(() => {
+                        window.location.replace("setup.html");
+                    }, 500);
+                }
+
+            } catch (err) {
+                errorMsg.style.display = 'block';
+                errorMsg.innerHTML = "<b>System Error:</b> Failed to connect to server. " + err.message;
+                statusText.innerText = "Error Occurred";
+                await signOut(auth); 
+            }
+        }
+
+        // STEP 1: Handle users returning from the Backup Redirect Method
+        getRedirectResult(auth).then((result) => {
+            if (result && result.user) {
+                statusText.innerText = "Login restored successfully! Processing...";
+            }
+        }).catch((error) => {
+            console.error("Redirect Error:", error);
+            errorMsg.style.display = 'block';
+            errorMsg.innerHTML = "<b>Authentication Failed:</b> " + error.message;
+            statusText.innerText = "Sign up with";
+        });
+
+        // STEP 2: Listen for Authentication State Changes
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                processUserLogin(user);
+            } else {
+                statusText.innerText = "Sign up with";
+            }
+        });
+
+        // STEP 3: Hybrid Login Logic (Popup first, Redirect as Backup)
+        if (googleBtn) {
+            googleBtn.addEventListener('click', () => {
+                errorMsg.style.display = 'none';
+                statusText.innerText = "Connecting to Google...";
+                
+                signInWithPopup(auth, googleProvider)
+                    .then((result) => {
+                        statusText.innerText = "Authentication Complete! Please wait...";
+                    })
+                    .catch((error) => {
+                        console.warn("Popup blocked or failed. Switching to Redirect...", error);
+                        
+                        if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request' || error.code === 'auth/internal-error') {
+                            statusText.innerText = "Popup blocked. Using secure redirect...";
+                            signInWithRedirect(auth, googleProvider).catch((err) => {
+                                errorMsg.style.display = 'block';
+                                errorMsg.innerHTML = "<b>Redirect Failed:</b> " + err.message;
+                                statusText.innerText = "Sign up with";
+                            });
+                        } else {
+                            errorMsg.style.display = 'block';
+                            errorMsg.innerHTML = "<b>Login Cancelled or Failed:</b> " + error.message;
+                            statusText.innerText = "Sign up with";
+                        }
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
