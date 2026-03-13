@@ -1,309 +1,337 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Chronex Classes - Home</title>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#e8d4f3">
-  
-  <link rel="icon" type="image/png" href="Logo_2.png?v=20251015" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-  <!-- MathJax Configuration for LaTeX Equations -->
-  <script>
-    window.MathJax = {
-      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
-      startup: { typeset: false }
-    };
-  </script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
-  <style>
-    body { background-color: #fffaf0; font-family: 'Inter', sans-serif; margin: 0; padding: 0; color: #333; }
-    header { background-color: #e8d4f3; padding: 10px 20px 6px 20px; margin: 10px 10px 0 10px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
-    header img { height: 50px; background-color: #7851a9; border-radius: 50%; width: 50px; }
-    header h2 { margin: 0 0 0 10px; font-size: 22px; font-weight: bold; color: #7851a9; }
-    .header-right { display: flex; align-items: center; gap: 15px; }
-    nav { display: flex; align-items: center; gap: 18px; }
-    nav a { text-decoration: none; color: #7851a9; font-weight: 600; padding: 6px 14px; border-radius: 6px; transition: background-color 0.2s; }
-    nav a:hover, nav a.active { background-color: #fffaf0; }
-
-    /* AI Search Bar */
-    .search-container { position: relative; display: flex; align-items: center; }
-    #searchIconBtn { background: none; border: none; cursor: pointer; color: #7851a9; padding: 8px; border-radius: 50%; transition: background-color 0.2s; display: flex; align-items: center; justify-content: center; }
-    #searchIconBtn:hover { background-color: #dcbceb; }
-    #searchIconBtn svg { width: 22px; height: 22px; fill: currentColor; }
+    <title>Chronex Classes - Home</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e8d4f3">
+    <link rel="icon" type="image/png" href="Logo_2.png" />
     
-    #searchInput { width: 0; opacity: 0; padding: 0; border: none; border-radius: 20px; outline: none; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: absolute; right: 0; background-color: white; color: #333; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); pointer-events: none; }
-    #searchInput.active { width: 220px; opacity: 1; padding: 8px 40px 8px 15px; pointer-events: auto; z-index: 1001; }
-    @media (max-width: 480px) { #searchInput.active { width: 180px; } }
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Marked.js for rendering Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    /* AI Modal */
-    #aiModal { backdrop-filter: blur(4px); transition: opacity 0.3s ease; }
-    .ai-content-box { max-height: 70vh; overflow-y: auto; }
-    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #7851a9; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    <!-- MathJax Configuration for LaTeX Equations -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+            startup: { typeset: false }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-    /* Markdown Formatting */
-    #aiAnswerText p { margin-bottom: 12px; }
-    #aiAnswerText ul { list-style-type: disc; margin-left: 20px; margin-bottom: 12px; }
-    #aiAnswerText ol { list-style-type: decimal; margin-left: 20px; margin-bottom: 12px; }
-    #aiAnswerText strong { font-weight: 700; color: #5a3a7c; }
+    <style>
+        body { background-color: #fffaf0; font-family: 'Inter', sans-serif; margin: 0; padding: 0; color: #333; }
+        
+        /* Header & Navigation */
+        header { background-color: #e8d4f3; padding: 10px 20px 6px 20px; margin: 10px 10px 0 10px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        header img { height: 50px; background-color: #7851a9; border-radius: 50%; width: 50px; }
+        header h2 { margin: 0 0 0 10px; font-size: 22px; font-weight: bold; color: #7851a9; }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        nav { display: flex; align-items: center; gap: 18px; }
+        nav a { text-decoration: none; color: #7851a9; font-weight: 600; padding: 6px 14px; border-radius: 6px; transition: background-color 0.2s; }
+        nav a:hover, nav a.active { background-color: #fffaf0; }
 
-    .hamburger { display: none; flex-direction: column; cursor: pointer; gap: 5px; padding: 5px; border-radius: 4px; background-color: #7851a9; }
-    .hamburger div { width: 25px; height: 3px; background-color: #fffaf0; border-radius: 2px; transition: all 0.3s ease-in-out; }
-    .hamburger.open div:nth-child(1) { transform: translateY(8px) rotate(45deg); }
-    .hamburger.open div:nth-child(2) { opacity: 0; }
-    .hamburger.open div:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+        /* Secure AI Search Bar */
+        .search-container { position: relative; display: flex; align-items: center; }
+        #searchIconBtn { background: none; border: none; cursor: pointer; color: #7851a9; padding: 8px; border-radius: 50%; transition: background-color 0.2s; display: flex; align-items: center; justify-content: center; }
+        #searchIconBtn:hover { background-color: #dcbceb; }
+        #searchIconBtn svg { width: 22px; height: 22px; fill: currentColor; }
+        
+        #searchInput { width: 0; opacity: 0; padding: 0; border: none; border-radius: 20px; outline: none; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: absolute; right: 0; background-color: white; color: #333; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); pointer-events: none; }
+        #searchInput.active { width: 220px; opacity: 1; padding: 8px 40px 8px 15px; pointer-events: auto; z-index: 1001; }
+        @media (max-width: 480px) { #searchInput.active { width: 180px; } }
 
-    .mobile-menu { display: flex; flex-direction: column; max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out; position: absolute; top: 70px; right: 10px; background-color: #e8d4f3; border: 1px solid #7851a9; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: calc(100% - 20px); z-index: 999; }
-    .mobile-menu.active { max-height: 300px; opacity: 1; padding: 10px 0; }
-    @media (max-width: 768px) { nav { display: none; } .hamburger { display: flex; } .mobile-menu a { padding: 10px 20px; color: #7851a9; font-weight: 600; } .mobile-menu a:hover { background-color: #fffaf0; padding-left: 25px; } }
+        /* AI Modal Styles */
+        #aiModal { backdrop-filter: blur(4px); transition: opacity 0.3s ease; }
+        .ai-content-box { max-height: 70vh; overflow-y: auto; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #7851a9; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    .feature-card { background-color: white; border: 1px solid #e8d4f3; border-radius: 12px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); transition: transform 0.3s ease-out, box-shadow 0.3s ease-out; cursor: pointer; min-height: 120px; display: flex; flex-direction: column; justify-content: center; }
-    .feature-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(120, 81, 169, 0.2); border-color: #7851a9; }
+        /* AI Answer Markdown Formatting */
+        #aiAnswerText p { margin-bottom: 12px; }
+        #aiAnswerText ul { list-style-type: disc; margin-left: 20px; margin-bottom: 12px; }
+        #aiAnswerText ol { list-style-type: decimal; margin-left: 20px; margin-bottom: 12px; }
+        #aiAnswerText strong { font-weight: 700; color: #5a3a7c; }
 
-    #my-floating-image { position: fixed; top: 50px; left: 50px; width: 150px; z-index: 10000; cursor: move; user-select: none; touch-action: none; display: none; }
-  </style>
+        /* Mobile Menu Settings */
+        .hamburger { display: none; flex-direction: column; cursor: pointer; gap: 5px; padding: 5px; border-radius: 4px; background-color: #7851a9; }
+        .hamburger div { width: 25px; height: 3px; background-color: #fffaf0; border-radius: 2px; transition: all 0.3s ease-in-out; }
+        .hamburger.open div:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+        .hamburger.open div:nth-child(2) { opacity: 0; }
+        .hamburger.open div:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+        .mobile-menu { display: flex; flex-direction: column; max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out; position: absolute; top: 70px; right: 10px; background-color: #e8d4f3; border: 1px solid #7851a9; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: calc(100% - 20px); z-index: 999; }
+        .mobile-menu.active { max-height: 300px; opacity: 1; padding: 10px 0; }
+        @media (max-width: 768px) { nav { display: none; } .hamburger { display: flex; } .mobile-menu a { padding: 10px 20px; color: #7851a9; font-weight: 600; } .mobile-menu a:hover { background-color: #fffaf0; padding-left: 25px; } }
+
+        /* Feature Cards */
+        .feature-card { background-color: white; border: 1px solid #e8d4f3; border-radius: 12px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); transition: transform 0.3s ease-out, box-shadow 0.3s ease-out; cursor: pointer; min-height: 120px; display: flex; flex-direction: column; justify-content: center; }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(120, 81, 169, 0.2); border-color: #7851a9; }
+
+        /* Floating Mascot/Sticker */
+        #my-floating-image { position: fixed; top: 50px; left: 50px; width: 150px; z-index: 10000; cursor: move; user-select: none; touch-action: none; display: none; }
+    </style>
 </head>
+
+<!-- Body is hidden by default. Revealed only if Firebase Auth is valid -->
 <body style="display: none;">
 
 <header>
-  <div class="flex items-center">
-    <img src="Logo_2.png?v=20251014" alt="Chronex Classes Logo" onerror="this.style.display='none'" />
-    <h2>Chronex Classes</h2>
-  </div>
-
-  <div class="header-right">
-    <!-- Secure AI Search Container -->
-    <div class="search-container" id="searchContainer">
-      <input type="text" id="searchInput" placeholder="Ask AI..." autocomplete="off">
-      <button id="searchIconBtn" aria-label="Search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-        </svg>
-      </button>
+    <div class="flex items-center">
+        <img src="Logo_2.png" alt="Chronex Classes Logo" onerror="this.style.display='none'" />
+        <h2>Chronex Classes</h2>
     </div>
 
-    <nav>
-      <a href="home.html" class="active">Home</a>
-      <a href="study.html">Study</a>
-      <a href="Resources.html">Resources</a>
-      <a href="Courses.html">Course Details</a>
-    </nav>
+    <div class="header-right">
+        <!-- Secure AI Search Container -->
+        <div class="search-container" id="searchContainer">
+            <input type="text" id="searchInput" placeholder="Ask AI Teacher..." autocomplete="off">
+            <button id="searchIconBtn" aria-label="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+            </button>
+        </div>
 
-    <div class="hamburger mobile-menu-button" onclick="toggleMenu()">
-      <div></div><div></div><div></div>
+        <nav>
+            <a href="home.html" class="active">Home</a>
+            <a href="study.html">Study</a>
+            <a href="Resources.html">Resources</a>
+            <a href="Courses.html">Course Details</a>
+        </nav>
+
+        <div class="hamburger mobile-menu-button" onclick="toggleMenu()">
+            <div></div><div></div><div></div>
+        </div>
     </div>
-  </div>
 
-  <div id="mobileMenu" class="mobile-menu">
-    <a href="home.html" class="active">Home</a>
-    <a href="study.html">Study</a>
-    <a href="Resources.html">Resources</a>
-    <a href="Courses.html">Course Details</a>
-  </div>
+    <!-- Mobile Dropdown Menu -->
+    <div id="mobileMenu" class="mobile-menu">
+        <a href="home.html" class="active">Home</a>
+        <a href="study.html">Study</a>
+        <a href="Resources.html">Resources</a>
+        <a href="Courses.html">Course Details</a>
+    </div>
 </header>
 
-<!-- AI Result Modal -->
+<!-- Secure AI Result Modal -->
 <div id="aiModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[9999] flex justify-center items-center px-4 opacity-0 pointer-events-none">
-  <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden transform transition-all scale-95" id="aiModalContent">
-    <div class="bg-[#7851a9] px-6 py-4 flex justify-between items-center">
-      <h3 class="text-white font-bold text-lg flex items-center gap-2"><span>✨</span> AI Assistant</h3>
-      <button id="closeAiModal" class="text-white hover:text-gray-200 text-2xl leading-none">&times;</button>
+    <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden transform transition-all scale-95" id="aiModalContent">
+        <div class="bg-[#7851a9] px-6 py-4 flex justify-between items-center">
+            <h3 class="text-white font-bold text-lg flex items-center gap-2"><span>✨</span> AI Assistant</h3>
+            <button id="closeAiModal" class="text-white hover:text-gray-200 text-2xl leading-none">&times;</button>
+        </div>
+        <div class="p-6 ai-content-box">
+            <h4 id="userQuestionText" class="font-semibold text-gray-700 mb-4 border-b pb-2"></h4>
+            <div id="aiLoading" class="loader hidden"></div>
+            <div id="aiAnswerText" class="text-gray-800 leading-relaxed text-[15px]"></div>
+        </div>
     </div>
-    <div class="p-6 ai-content-box">
-      <h4 id="userQuestionText" class="font-semibold text-gray-700 mb-4 border-b pb-2"></h4>
-      <div id="aiLoading" class="loader hidden"></div>
-      <div id="aiAnswerText" class="text-gray-800 leading-relaxed text-[15px]"></div>
-    </div>
-  </div>
 </div>
 
+<!-- Main Content Area -->
 <main class="max-w-5xl mx-auto p-6 mt-4">
-  <h1 class="text-3xl sm:text-4xl text-center mb-4 font-extrabold text-[#7851a9]">Welcome to<br>Chronex Classes</h1>
-  <p class="text-center text-lg mb-8">Your gateway to mastering <b>Physics</b> with clarity, confidence, and competitive edge.</p>
+    <h1 class="text-3xl sm:text-4xl text-center mb-4 font-extrabold text-[#7851a9]">Welcome to<br>Chronex Classes</h1>
+    <p class="text-center text-lg mb-8">Your gateway to mastering <b>Physics</b> with clarity, confidence, and competitive edge.</p>
 
-  <div class="text-center mb-10">
-    <a href="study.html" class="inline-block bg-[#7851a9] text-white font-bold py-3 px-10 rounded-full shadow-lg hover:bg-[#5a3a7c] text-xl transition transform hover:-translate-y-1">
-       Enter Classroom
-    </a>
-  </div>
+    <div class="text-center mb-10">
+        <a href="study.html" class="inline-block bg-[#7851a9] text-white font-bold py-3 px-10 rounded-full shadow-lg hover:bg-[#5a3a7c] text-xl transition transform hover:-translate-y-1">
+            Enter Classroom
+        </a>
+    </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-    <div class="feature-card">
-      <div class="text-3xl text-[#7851a9] mb-2">💡</div>
-      <h3 class="font-semibold text-lg">Crystal-Clear Concepts</h3>
-      <p class="text-sm text-gray-600">Building a foundation where every 'why' is answered logically.</p>
+    <!-- Features Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+        <div class="feature-card">
+            <div class="text-3xl text-[#7851a9] mb-2">💡</div>
+            <h3 class="font-semibold text-lg">Crystal-Clear Concepts</h3>
+            <p class="text-sm text-gray-600">Building a foundation where every 'why' is answered logically.</p>
+        </div>
+        <div class="feature-card">
+            <div class="text-3xl text-[#7851a9] mb-2">🧠</div>
+            <h3 class="font-semibold text-lg">Problem-Solving</h3>
+            <p class="text-sm text-gray-600">Mastering techniques for board exams and JEE preparation.</p>
+        </div>
+        <div class="feature-card">
+            <div class="text-3xl text-[#7851a9] mb-2">🛠️</div>
+            <h3 class="font-semibold text-lg">Daily Practice</h3>
+            <p class="text-sm text-gray-600">Immediate doubt clearing and assignments.</p>
+        </div>
+        <div class="feature-card">
+            <div class="text-3xl text-[#7851a9] mb-2">🚀</div>
+            <h3 class="font-semibold text-lg">Smart Guidance</h3>
+            <p class="text-sm text-gray-600">Effective mentorship that delivers tangible results.</p>
+        </div>
     </div>
-    <div class="feature-card">
-      <div class="text-3xl text-[#7851a9] mb-2">🧠</div>
-      <h3 class="font-semibold text-lg">Problem-Solving</h3>
-      <p class="text-sm text-gray-600">Mastering techniques for board exams and JEE preparation.</p>
-    </div>
-    <div class="feature-card">
-      <div class="text-3xl text-[#7851a9] mb-2">🛠️</div>
-      <h3 class="font-semibold text-lg">Daily Practice</h3>
-      <p class="text-sm text-gray-600">Immediate doubt clearing and assignments.</p>
-    </div>
-    <div class="feature-card">
-      <div class="text-3xl text-[#7851a9] mb-2">🚀</div>
-      <h3 class="font-semibold text-lg">Smart Guidance</h3>
-      <p class="text-sm text-gray-600">Effective mentorship that delivers tangible results.</p>
-    </div>
-  </div>
 </main>
 
 <footer class="text-center bg-[#7851a9] text-white p-4 mt-10">
-  &copy; <span id="year"></span> Chronex Classes
+    &copy; <span id="year"></span> Chronex Classes. All rights reserved.
 </footer>
 
 <img id="my-floating-image" src="./My_Image.png" alt="Draggable Sticker" onerror="this.style.display='none'">
 
+<!-- UI & AI Integration Scripts -->
 <script>
-  document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-  function toggleMenu() {
-    document.getElementById('mobileMenu').classList.toggle('active');
-    document.querySelector('.hamburger').classList.toggle('open');
-  }
-
-  // --- SECURE GEMINI AI SEARCH LOGIC ---
-  const searchIconBtn = document.getElementById('searchIconBtn');
-  const searchInput = document.getElementById('searchInput');
-  const searchContainer = document.getElementById('searchContainer');
-  const aiModal = document.getElementById('aiModal');
-  const aiModalContent = document.getElementById('aiModalContent');
-  const closeAiModalBtn = document.getElementById('closeAiModal');
-  const aiLoading = document.getElementById('aiLoading');
-  const aiAnswerText = document.getElementById('aiAnswerText');
-  const userQuestionText = document.getElementById('userQuestionText');
-  const floatingImg = document.getElementById('my-floating-image'); 
-
-  // 🔗 THE MAGIC: Points to your new Render Backend
-  const BACKEND_URL = "https://chronex-api-server.onrender.com/api/chat"; 
-
-  function showFloatingImage() { if (floatingImg) floatingImg.style.display = 'block'; }
-  function hideFloatingImage() { if (floatingImg) floatingImg.style.display = 'none'; }
-
-  searchIconBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    searchInput.classList.toggle('active');
-    if(searchInput.classList.contains('active')) { 
-        searchInput.focus(); showFloatingImage(); 
-    } else {
-        if (aiModal.classList.contains('hidden')) hideFloatingImage();
+    function toggleMenu() {
+        document.getElementById('mobileMenu').classList.toggle('active');
+        document.querySelector('.hamburger').classList.toggle('open');
     }
-  });
 
-  document.addEventListener('click', (e) => {
-    if (!searchContainer.contains(e.target) && searchInput.classList.contains('active')) {
-      searchInput.classList.remove('active'); searchInput.value = '';
-      if (aiModal.classList.contains('hidden')) hideFloatingImage();
+    // --- SECURE GEMINI AI SEARCH LOGIC ---
+    const searchIconBtn = document.getElementById('searchIconBtn');
+    const searchInput = document.getElementById('searchInput');
+    const searchContainer = document.getElementById('searchContainer');
+    const aiModal = document.getElementById('aiModal');
+    const aiModalContent = document.getElementById('aiModalContent');
+    const closeAiModalBtn = document.getElementById('closeAiModal');
+    const aiLoading = document.getElementById('aiLoading');
+    const aiAnswerText = document.getElementById('aiAnswerText');
+    const userQuestionText = document.getElementById('userQuestionText');
+    const floatingImg = document.getElementById('my-floating-image'); 
+
+    // 🔗 THE SECURE CONNECTION: Points to your custom Render Backend instead of exposing the API key
+    const BACKEND_CHAT_URL = "https://chronex-api-server.onrender.com/api/chat"; 
+
+    function showFloatingImage() { if (floatingImg) floatingImg.style.display = 'block'; }
+    function hideFloatingImage() { if (floatingImg) floatingImg.style.display = 'none'; }
+
+    // Toggle Search Input
+    searchIconBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        searchInput.classList.toggle('active');
+        if(searchInput.classList.contains('active')) { 
+            searchInput.focus(); showFloatingImage(); 
+        } else {
+            if (aiModal.classList.contains('hidden')) hideFloatingImage();
+        }
+    });
+
+    // Close Search Input when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!searchContainer.contains(e.target) && searchInput.classList.contains('active')) {
+            searchInput.classList.remove('active'); searchInput.value = '';
+            if (aiModal.classList.contains('hidden')) hideFloatingImage();
+        }
+    });
+    searchInput.addEventListener('click', (e) => e.stopPropagation());
+
+    // Trigger Search on Enter
+    searchInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            const query = searchInput.value.trim();
+            if (query !== "") {
+                showFloatingImage(); 
+                fetchSecureGeminiAnswer(query);
+                searchInput.classList.remove('active'); searchInput.value = ''; 
+            }
+        }
+    });
+
+    function closeAIModal() {
+        aiModal.classList.add('opacity-0', 'pointer-events-none');
+        aiModalContent.classList.add('scale-95');
+        setTimeout(() => { 
+            aiModal.classList.add('hidden'); 
+            if (!searchInput.classList.contains('active')) hideFloatingImage();
+        }, 300);
     }
-  });
-  searchInput.addEventListener('click', (e) => e.stopPropagation());
+    closeAiModalBtn.addEventListener('click', closeAIModal);
 
-  searchInput.addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') {
-      const query = searchInput.value.trim();
-      if (query !== "") {
-        showFloatingImage(); 
-        fetchGeminiAnswer(query);
-        searchInput.classList.remove('active'); searchInput.value = ''; 
-      }
+    // Communicate with the Custom Render Backend for AI Responses
+    async function fetchSecureGeminiAnswer(question) {
+        aiModal.classList.remove('hidden');
+        setTimeout(() => {
+            aiModal.classList.remove('opacity-0', 'pointer-events-none');
+            aiModalContent.classList.remove('scale-95');
+        }, 10);
+        
+        userQuestionText.innerText = `Q: ${question}`;
+        aiAnswerText.innerText = "";
+        aiLoading.classList.remove('hidden');
+
+        try {
+            const response = await fetch(BACKEND_CHAT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: question })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok || data.error) throw new Error(data.error || "Server connection failed.");
+            
+            if(data.candidates && data.candidates.length > 0) {
+                let rawAnswer = data.candidates[0].content.parts[0].text;
+                // Parse markdown into HTML safely
+                if (typeof marked !== 'undefined') {
+                    aiAnswerText.innerHTML = marked.parse(rawAnswer);
+                } else {
+                    aiAnswerText.innerHTML = rawAnswer;
+                }
+                // Render mathematical equations
+                if (window.MathJax) MathJax.typesetPromise([aiAnswerText]);
+            } else {
+                aiAnswerText.innerText = "Sorry, I couldn't find an answer. Try again.";
+            }
+        } catch (error) {
+            aiAnswerText.innerHTML = `<span style="color: red; font-weight: bold;">⚠️ Initializing AI Engine...</span><br>The secure backend server might be waking up. Please wait 30 seconds and try again.`;
+            console.error(error);
+        } finally {
+            aiLoading.classList.add('hidden');
+        }
     }
-  });
 
-  function closeAIModal() {
-    aiModal.classList.add('opacity-0', 'pointer-events-none');
-    aiModalContent.classList.add('scale-95');
-    setTimeout(() => { 
-        aiModal.classList.add('hidden'); 
-        if (!searchInput.classList.contains('active')) hideFloatingImage();
-    }, 300);
-  }
-  closeAiModalBtn.addEventListener('click', closeAIModal);
-
-  // Calls the Render Backend
-  async function fetchGeminiAnswer(question) {
-    aiModal.classList.remove('hidden');
-    setTimeout(() => {
-      aiModal.classList.remove('opacity-0', 'pointer-events-none');
-      aiModalContent.classList.remove('scale-95');
-    }, 10);
-    
-    userQuestionText.innerText = `Q: ${question}`;
-    aiAnswerText.innerText = "";
-    aiLoading.classList.remove('hidden');
-
-    try {
-      const response = await fetch(BACKEND_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: question })
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok || data.error) throw new Error(data.error || "Server connection failed.");
-      
-      if(data.candidates && data.candidates.length > 0) {
-         let rawAnswer = data.candidates[0].content.parts[0].text;
-         if (typeof marked !== 'undefined') {
-           aiAnswerText.innerHTML = marked.parse(rawAnswer);
-         } else {
-           aiAnswerText.innerHTML = rawAnswer;
-         }
-         if (window.MathJax) MathJax.typesetPromise([aiAnswerText]);
-      } else {
-         aiAnswerText.innerText = "Sorry, I couldn't find an answer. Try again.";
-      }
-    } catch (error) {
-      aiAnswerText.innerHTML = `<span style="color: red; font-weight: bold;">⚠️ Initializing AI...</span> The backend server might be waking up. Please wait 10 seconds and try again.`;
-    } finally {
-      aiLoading.classList.add('hidden');
-    }
-  }
-
-  // Floating Image Drag Logic
-  (function() {
-      if(!floatingImg) return;
-      let isDragging = false, startX, startY, initialLeft, initialTop;
-      floatingImg.addEventListener('mousedown', startDrag);
-      floatingImg.addEventListener('touchstart', startDrag, { passive: false });
-      document.addEventListener('mousemove', drag);
-      document.addEventListener('touchmove', drag, { passive: false });
-      document.addEventListener('mouseup', endDrag);
-      document.addEventListener('touchend', endDrag);
-      function startDrag(e) {
-          isDragging = true;
-          startX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
-          startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-          const rect = floatingImg.getBoundingClientRect();
-          initialLeft = rect.left; initialTop = rect.top;
-      }
-      function drag(e) {
-          if (!isDragging) return;
-          if(e.type === 'touchmove') e.preventDefault(); 
-          const dx = (e.type === 'touchmove' ? e.touches[0].clientX : e.clientX) - startX;
-          const dy = (e.type === 'touchmove' ? e.touches[0].clientY : e.clientY) - startY;
-          floatingImg.style.left = (initialLeft + dx) + 'px';
-          floatingImg.style.top = (initialTop + dy) + 'px';
-      }
-      function endDrag() { isDragging = false; }
-  })();
+    // Floating Image Drag Logic (Fun Element)
+    (function() {
+        if(!floatingImg) return;
+        let isDragging = false, startX, startY, initialLeft, initialTop;
+        floatingImg.addEventListener('mousedown', startDrag);
+        floatingImg.addEventListener('touchstart', startDrag, { passive: false });
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', drag, { passive: false });
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+        
+        function startDrag(e) {
+            isDragging = true;
+            startX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+            startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+            const rect = floatingImg.getBoundingClientRect();
+            initialLeft = rect.left; initialTop = rect.top;
+        }
+        function drag(e) {
+            if (!isDragging) return;
+            if(e.type === 'touchmove') e.preventDefault(); 
+            const dx = (e.type === 'touchmove' ? e.touches[0].clientX : e.clientX) - startX;
+            const dy = (e.type === 'touchmove' ? e.touches[0].clientY : e.clientY) - startY;
+            floatingImg.style.left = (initialLeft + dx) + 'px';
+            floatingImg.style.top = (initialTop + dy) + 'px';
+        }
+        function endDrag() { isDragging = false; }
+    })();
 </script> 
   
+<!-- Firebase Security Logic -->
 <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
     import { auth } from "./firebase-setup.js";
 
+    // Strict Security Guard: Verify if the user is authenticated
     onAuthStateChanged(auth, (user) => {
-        if (user) document.body.style.display = "block";
-        else window.location.replace("index.html");
+        if (user) {
+            // Authorized user: Reveal the page body
+            document.body.style.display = "block";
+        } else {
+            // Unauthorized user: Kick out to the login page
+            window.location.replace("index.html");
+        }
     });
 </script>
 </body>
