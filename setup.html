@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronex Classes - Profile Setup</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #fffaf0; font-family: 'Inter', sans-serif; }
+        .form-container { background-color: white; border: 1px solid #e8d4f3; box-shadow: 0 10px 25px rgba(120, 81, 169, 0.1); }
+        .input-field { width: 100%; padding: 12px; border: 2px solid #e8d4f3; border-radius: 8px; margin-top: 6px; outline: none; transition: border-color 0.3s; }
+        .input-field:focus { border-color: #7851a9; }
+        .input-field[readonly] { background-color: #f3f4f6; color: #6b7280; cursor: not-allowed; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4" style="display: none;">
+
+    <div class="form-container w-full max-w-md p-8 rounded-2xl relative">
+        <div id="loadingOverlay" class="absolute inset-0 bg-white bg-opacity-90 z-10 hidden flex-col items-center justify-center rounded-2xl">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#7851a9]"></div>
+            <p class="mt-4 text-[#7851a9] font-semibold" id="loadingText">Saving your details...</p>
+        </div>
+
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-[#7851a9]">Complete Your Profile</h1>
+            <p class="text-sm text-gray-500 mt-2">Please fill in these mandatory details to proceed.</p>
+        </div>
+
+        <form id="setupForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Email Address</label>
+                <input type="email" id="email" class="input-field" readonly required>
+                <p class="text-xs text-gray-400 mt-1">Fetched automatically from Google Sign-In</p>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Full Name *</label>
+                <input type="text" id="fullName" class="input-field" placeholder="E.g., Arko Das" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Phone/WhatsApp Number *</label>
+                <input type="tel" id="phone" class="input-field" placeholder="10-digit mobile number" pattern="[0-9]{10}" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Current Class *</label>
+                <select id="studentClass" class="input-field" required>
+                    <option value="" disabled selected>Select your class</option>
+                    <option value="11">Class 11</option>
+                    <option value="12">Class 12</option>
+                    <option value="Dropper">Dropper Batch</option>
+                </select>
+            </div>
+            <button type="submit" class="w-full bg-[#7851a9] text-white font-bold py-3 rounded-xl hover:bg-[#5a3a7c] transition duration-300 mt-6 shadow-md">
+                Save & Continue to Classes
+            </button>
+        </form>
+    </div>
+
+    <!-- Firebase Logic -->
+    <script type="module">
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { auth } from "./firebase-setup.js";
+
+        // 🔗 TOR NOTUN MEGA BACKEND LINK
+        const BACKEND_URL = "https://chronex-api-server.onrender.com";
+
+        const emailInput = document.getElementById('email');
+        const setupForm = document.getElementById('setupForm');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                emailInput.value = user.email;
+                document.body.style.display = "flex";
+
+                try {
+                    loadingText.innerText = "Checking profile status...";
+                    loadingOverlay.classList.remove('hidden');
+                    loadingOverlay.classList.add('flex');
+
+                    const checkResponse = await fetch(`${BACKEND_URL}/api/students/check/${user.email}`);
+                    const checkData = await checkResponse.json();
+
+                    if (checkData.isRegistered) {
+                        // Jodi aage theke registered thake tahole direct home page e pathiye de
+                        window.location.replace("home.html");
+                    } else {
+                        // Notun user hole form ta dekha
+                        loadingOverlay.classList.add('hidden');
+                        loadingOverlay.classList.remove('flex');
+                    }
+                } catch (error) {
+                    console.error("Backend Error:", error);
+                    alert("Error connecting to server. Please try again later.");
+                    loadingOverlay.classList.add('hidden');
+                    loadingOverlay.classList.remove('flex');
+                }
+
+            } else {
+                // Login kora na thakle index.html e pathiye de
+                window.location.replace("index.html");
+            }
+        });
+
+        setupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loadingText.innerText = "Saving your details...";
+            loadingOverlay.classList.remove('hidden');
+            loadingOverlay.classList.add('flex');
+
+            const studentData = {
+                name: document.getElementById('fullName').value.trim(),
+                email: emailInput.value,
+                phone: document.getElementById('phone').value.trim(),
+                studentClass: document.getElementById('studentClass').value,
+                joinYear: new Date().getFullYear().toString() 
+            };
+
+            try {
+                // Backend e data pathano hocche
+                const response = await fetch(`${BACKEND_URL}/api/students/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(studentData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Registration successful hole home page e pathiye de
+                    window.location.replace("home.html");
+                } else {
+                    alert("Error: " + result.error);
+                    loadingOverlay.classList.add('hidden');
+                    loadingOverlay.classList.remove('flex');
+                }
+            } catch (error) {
+                console.error("Save Error:", error);
+                alert("Failed to connect to the database.");
+                loadingOverlay.classList.add('hidden');
+                loadingOverlay.classList.remove('flex');
+            }
+        });
+    </script>
+</body>
+</html>
