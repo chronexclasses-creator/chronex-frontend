@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Chronex Classes</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        /* Body is hidden by default for security to prevent unauthorized access */
+        body { background-color: #faf8f5; display: none; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; gap: 20px;}
+        .admin-box { background-color: white; padding: 30px 20px; border-radius: 12px; box-shadow: 0px 8px 24px rgba(114, 75, 145, 0.08); width: 100%; max-width: 600px; }
+        h2 { color: #724b91; margin-top: 0; margin-bottom: 20px; text-align: center; font-size: 24px; border-bottom: 2px solid #e8d4f3; padding-bottom: 10px;}
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #444; font-weight: 600; font-size: 14px; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.3s; background-color: white; }
+        select:focus, input:focus { border-color: #724b91; }
+        .submit-btn { background-color: #724b91; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; margin-top: 10px; }
+        .submit-btn:hover { background-color: #5a3b73; }
+        .status-msg { text-align: center; margin-top: 15px; font-size: 14px; font-weight: 500; display: none; padding: 10px; border-radius: 6px; }
+        
+        .access-btn { background-color: #d84315; }
+        .access-btn:hover { background-color: #bf360c; }
+        .generated-code-box { background-color: #fff3e0; border: 2px dashed #ff9800; padding: 15px; text-align: center; border-radius: 8px; margin-top: 15px; display: none;}
+        .code-text { font-size: 24px; font-weight: bold; color: #d84315; letter-spacing: 2px; margin: 10px 0;}
+        
+        /* Table Styles for Code History */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px;}
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f3effc; color: #7851a9; font-weight: bold; }
+        .status-unused { color: #2e7d32; font-weight: bold; background-color: #e8f5e9; padding: 3px 6px; border-radius: 4px; font-size: 12px;}
+        .status-used { color: #c62828; background-color: #ffebee; padding: 3px 6px; border-radius: 4px; font-size: 12px;}
+    </style>
+</head>
+<body>
+
+    <!-- Upload Study Material Form -->
+    <div class="admin-box">
+        <h2>Upload Study Material</h2>
+        <form id="upload-form">
+            <div class="form-group">
+                <label for="year">Session Year</label>
+                <input type="number" id="year" placeholder="e.g. 2025" required>
+            </div>
+            <div class="form-group">
+                <label for="class-name">Class</label>
+                <select id="class-name" required>
+                    <option value="Class 11">Class 11</option>
+                    <option value="Class 12">Class 12</option>
+                    <option value="Dropper">Dropper</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="chapter">Chapter Name</label>
+                <select id="chapter" required>
+                    <option value="" disabled selected>Select a chapter...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="lecture">Lecture Number</label>
+                <input type="number" id="lecture" placeholder="e.g. 1" required>
+            </div>
+            <div class="form-group">
+                <label for="details">Lecture Details (Optional)</label>
+                <input type="text" id="details" placeholder="e.g. Basics of Vector">
+            </div>
+            <!-- Video Link: Accepts standard URLs or Embed Code -->
+            <div class="form-group">
+                <label for="link">Video Link (YouTube URL or Embed Code)</label>
+                <input type="text" id="link" placeholder="e.g. https://youtu.be/... or <iframe...>" required>
+            </div>
+            <!-- PDF Notes Link -->
+            <div class="form-group">
+                <label for="pdf-link">Lecture Notes Link (Google Drive - Optional)</label>
+                <input type="url" id="pdf-link" placeholder="https://drive.google.com/file/d/.../view">
+            </div>
+            
+            <button type="submit" class="submit-btn">Save to Database</button>
+        </form>
+        <div id="upload-status" class="status-msg"></div>
+    </div>
+
+    <!-- Generate Unique Code Form -->
+    <div class="admin-box" style="border-top: 5px solid #d84315;">
+        <h2 style="color: #d84315; border-color: #ffccbc;">Generate Student Access Code</h2>
+        <p style="font-size: 13px; color: #666; text-align: center; margin-bottom: 15px;">Create a single-use unique code for a student after receiving payment.</p>
+        <form id="access-form">
+            <div class="form-group">
+                <label for="access-class">Select Class</label>
+                <select id="access-class" required>
+                    <option value="Class 11">Class 11</option>
+                    <option value="Class 12">Class 12</option>
+                    <option value="Dropper">Dropper</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="access-year">Select Session Year</label>
+                <input type="number" id="access-year" placeholder="e.g. 2025" required>
+            </div>
+            <button type="submit" class="submit-btn access-btn">Generate Unique Code</button>
+        </form>
+        
+        <div id="access-status" class="status-msg"></div>
+        
+        <!-- Box to show the newly generated code -->
+        <div id="code-display-box" class="generated-code-box">
+            <p style="margin:0; font-size: 14px; color: #555;">Give this code to the student:</p>
+            <div class="code-text" id="final-code">CHX-XXXX</div>
+            <p style="margin:0; font-size: 12px; color: #d84315; font-weight: bold;">(Valid for 1 time use only)</p>
+        </div>
+    </div>
+
+    <!-- History Table of Generated Codes -->
+    <div class="admin-box" style="border-top: 5px solid #1976d2; max-width: 700px;">
+        <h2 style="color: #1976d2; border-color: #bbdefb;">Generated Codes History</h2>
+        <p style="font-size: 13px; color: #666; text-align: center; margin-bottom: 15px;">Track all your access codes and see who used them.</p>
+        
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Batch Code</th>
+                        <th>Class & Year</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="codes-table-body">
+                    <tr><td colspan="3" style="text-align:center;">Loading history...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- UI Scripts for Dropdowns and Code Generation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const class11Chapters = ["Basic Mathematics & Vectors", "Physical World and Measurement", "Kinematics", "Laws of Motion", "Work, Energy and Power", "System of Particles and Rotational Motion", "Gravitation", "Mechanical Properties of Solids", "Mechanical Properties of Fluids", "Thermal Properties of Matter", "Thermodynamics", "Kinetic Theory", "Oscillations", "Waves"];
+            const class12Chapters = ["Electric Charges and Fields", "Electrostatic Potential and Capacitance", "Current Electricity", "Moving Charges and Magnetism", "Magnetism and Matter", "Electromagnetic Induction", "Alternating Current", "Electromagnetic Waves", "Ray Optics and Optical Instruments", "Wave Optics", "Dual Nature of Radiation and Matter", "Atoms", "Nuclei", "Semiconductor Electronics"];
+            const dropperChapters = [...class11Chapters, ...class12Chapters];
+
+            const physicsChapters = { "Class 11": class11Chapters, "Class 12": class12Chapters, "Dropper": dropperChapters };
+            const classSelect = document.getElementById('class-name');
+            const chapterSelect = document.getElementById('chapter');
+
+            function updateChapterOptions() {
+                const selectedClass = classSelect.value;
+                const chapters = physicsChapters[selectedClass] || [];
+                chapterSelect.innerHTML = '<option value="" disabled selected>Select a chapter...</option>';
+                chapters.forEach(chapter => {
+                    const option = document.createElement('option');
+                    option.value = chapter;
+                    option.textContent = chapter;
+                    chapterSelect.appendChild(option);
+                });
+            }
+            classSelect.addEventListener('change', updateChapterOptions);
+            updateChapterOptions();
+            window.updateChapterOptions = updateChapterOptions;
+        });
+
+        // Function to Generate Random Code strings locally
+        function generateRandomCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = 'CHX-'; 
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+    </script>
+
+    <!-- Firebase Auth and Backend API Scripts -->
+    <script type="module">
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { auth, db } from "./firebase-setup.js";
+
+        // THE ULTIMATE HONEYPOT TRAP 
+        // Replace this with your actual admin email
+        const ADMIN_EMAIL = "arkod242@gmail.com"; 
+
+        // 🔗 NEW CONNECTION: Pointing to your Custom Render Backend
+        const BACKEND_URL = "https://chronex-api-server.onrender.com";
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                if (user.email === ADMIN_EMAIL || user.email === "arkodas.personal@gmail.com") {
+                    // Authorized Admin - Reveal Dashboard
+                    document.body.style.display = "flex"; 
+                    loadCodeHistory(); 
+                } else {
+                    // TRAP TRIGGERED! Unauthorized student detected.
+                    try {
+                        const userDocRef = doc(db, "users", user.uid);
+                        // Mark their profile permanently as "Banned" in the Firebase database
+                        await setDoc(userDocRef, { isBanned: true }, { merge: true });
+                        // Log them out forcefully
+                        await signOut(auth);
+                    } catch(e) { 
+                        console.error("Error banning user:", e); 
+                    }
+                    
+                    // Show alert and kick them out
+                    alert("SECURITY BREACH DETECTED\n\nYou have been permanently blocked from Chronex Classes for attempting to access unauthorized administrative files.");
+                    window.location.replace("index.html");
+                }
+            } else {
+                // If not logged in at all, kick to login page
+                window.location.replace("index.html");
+            }
+        });
+
+        // ---------------------------------------------------------
+        // 1. Upload Material Logic (Connecting to Render Backend)
+        // ---------------------------------------------------------
+        const uploadForm = document.getElementById('upload-form');
+        const uploadStatus = document.getElementById('upload-status');
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+            uploadStatus.style.display = 'block'; 
+            uploadStatus.style.backgroundColor = '#e8f4fd'; 
+            uploadStatus.style.color = '#0277bd'; 
+            uploadStatus.innerText = "Connecting to Secure Database... Please wait.";
+            
+            try {
+                // Fetching the values from the form
+                const materialData = {
+                    year: document.getElementById('year').value,
+                    className: document.getElementById('class-name').value,
+                    chapter: document.getElementById('chapter').value,
+                    lecture: parseInt(document.getElementById('lecture').value),
+                    details: document.getElementById('details').value.trim(),
+                    link: document.getElementById('link').value.trim(),
+                    pdfLink: document.getElementById('pdf-link').value.trim()
+                };
+
+                // Sending data to your Render Server instead of direct Firebase
+                const response = await fetch(`${BACKEND_URL}/api/admin/upload-material`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(materialData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    uploadStatus.style.backgroundColor = '#e8f5e9'; 
+                    uploadStatus.style.color = '#2e7d32'; 
+                    uploadStatus.innerHTML = `<b>Success!</b> ${result.message}`;
+                    
+                    // Clear the input fields
+                    document.getElementById('lecture').value = ''; 
+                    document.getElementById('details').value = ''; 
+                    document.getElementById('link').value = '';
+                    document.getElementById('pdf-link').value = ''; 
+                } else {
+                    throw new Error(result.error || "Failed to upload.");
+                }
+            } catch (error) {
+                uploadStatus.style.backgroundColor = '#ffebee'; 
+                uploadStatus.style.color = '#c62828'; 
+                uploadStatus.innerHTML = `<b>Error:</b> ${error.message}`;
+            }
+        });
+
+        // ---------------------------------------------------------
+        // 2. Load History Table Logic (Connecting to Render Backend)
+        // ---------------------------------------------------------
+        async function loadCodeHistory() {
+            const tableBody = document.getElementById('codes-table-body');
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/codes-history`);
+                const codesData = await response.json();
+
+                if (!response.ok) throw new Error(codesData.error || "Failed to fetch history.");
+
+                tableBody.innerHTML = '';
+                if(codesData.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No access codes generated yet.</td></tr>';
+                    return;
+                }
+
+                codesData.forEach(codeObj => {
+                    let statusHtml = '';
+                    if(codeObj.isUsed) {
+                        statusHtml = `<span class="status-used">Used by:<br>${codeObj.usedByEmail}</span>`;
+                    } else {
+                        statusHtml = `<span class="status-unused">Unused (Available)</span>`;
+                    }
+
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td><strong>${codeObj.code}</strong></td>
+                            <td>${codeObj.className}<br><small>(${codeObj.year})</small></td>
+                            <td>${statusHtml}</td>
+                        </tr>
+                    `;
+                });
+
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">Error loading history: ${error.message}</td></tr>`;
+            }
+        }
+
+        // ---------------------------------------------------------
+        // 3. Generate Access Code Logic (Connecting to Render Backend)
+        // ---------------------------------------------------------
+        const accessForm = document.getElementById('access-form');
+        const accessStatus = document.getElementById('access-status');
+        const codeDisplayBox = document.getElementById('code-display-box');
+        const finalCodeText = document.getElementById('final-code');
+
+        accessForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            accessStatus.style.display = 'block'; 
+            accessStatus.style.backgroundColor = '#e8f4fd'; 
+            accessStatus.style.color = '#0277bd'; 
+            accessStatus.innerText = "Requesting secure code from server...";
+            codeDisplayBox.style.display = 'none';
+
+            try {
+                const className = document.getElementById('access-class').value;
+                const year = document.getElementById('access-year').value;
+                const uniqueCode = generateRandomCode(); 
+                
+                const codeData = {
+                    code: uniqueCode,
+                    className: className,
+                    year: year
+                };
+
+                // Sending code data to Render Server to save in MongoDB
+                const response = await fetch(`${BACKEND_URL}/api/admin/generate-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(codeData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    accessStatus.style.display = 'none';
+                    finalCodeText.innerText = uniqueCode;
+                    codeDisplayBox.style.display = 'block';
+
+                    // Reload the table so the new code appears at the top
+                    loadCodeHistory();
+                } else {
+                    throw new Error(result.error || "Failed to generate code.");
+                }
+
+            } catch (error) {
+                accessStatus.style.backgroundColor = '#ffebee'; 
+                accessStatus.style.color = '#c62828'; 
+                accessStatus.innerHTML = `<b>Error:</b> ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
