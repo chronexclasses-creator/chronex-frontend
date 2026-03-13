@@ -17,6 +17,7 @@
 <body class="min-h-screen flex items-center justify-center p-4" style="display: none;">
 
     <div class="form-container w-full max-w-md p-8 rounded-2xl relative">
+        <!-- Loading Overlay to prevent double clicks -->
         <div id="loadingOverlay" class="absolute inset-0 bg-white bg-opacity-90 z-10 hidden flex-col items-center justify-center rounded-2xl">
             <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#7851a9]"></div>
             <p class="mt-4 text-[#7851a9] font-semibold" id="loadingText">Saving your details...</p>
@@ -35,7 +36,7 @@
             </div>
             <div>
                 <label class="block text-sm font-semibold text-gray-700">Full Name *</label>
-                <input type="text" id="fullName" class="input-field" placeholder="E.g., Arko Das" required>
+                <input type="text" id="fullName" class="input-field" placeholder="E.g., Rahul Das" required>
             </div>
             <div>
                 <label class="block text-sm font-semibold text-gray-700">Phone/WhatsApp Number *</label>
@@ -45,23 +46,23 @@
                 <label class="block text-sm font-semibold text-gray-700">Current Class *</label>
                 <select id="studentClass" class="input-field" required>
                     <option value="" disabled selected>Select your class</option>
-                    <option value="11">Class 11</option>
-                    <option value="12">Class 12</option>
+                    <option value="Class 11">Class 11</option>
+                    <option value="Class 12">Class 12</option>
                     <option value="Dropper">Dropper Batch</option>
                 </select>
             </div>
             <button type="submit" class="w-full bg-[#7851a9] text-white font-bold py-3 rounded-xl hover:bg-[#5a3a7c] transition duration-300 mt-6 shadow-md">
-                Save & Continue to Classes
+                Save & Continue
             </button>
         </form>
     </div>
 
-    <!-- Firebase Logic -->
+    <!-- Firebase and Backend Logic -->
     <script type="module">
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { auth } from "./firebase-setup.js";
 
-        // 🔗 TOR NOTUN MEGA BACKEND LINK
+        // 🔗 NEW CONNECTION: Pointing to your Custom Render Backend
         const BACKEND_URL = "https://chronex-api-server.onrender.com";
 
         const emailInput = document.getElementById('email');
@@ -69,8 +70,10 @@
         const loadingOverlay = document.getElementById('loadingOverlay');
         const loadingText = document.getElementById('loadingText');
 
+        // Check authentication state
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // Pre-fill email and make body visible
                 emailInput.value = user.email;
                 document.body.style.display = "flex";
 
@@ -79,14 +82,15 @@
                     loadingOverlay.classList.remove('hidden');
                     loadingOverlay.classList.add('flex');
 
+                    // Check if the user somehow came here even though they are already registered
                     const checkResponse = await fetch(`${BACKEND_URL}/api/students/check/${user.email}`);
                     const checkData = await checkResponse.json();
 
                     if (checkData.isRegistered) {
-                        // Jodi aage theke registered thake tahole direct home page e pathiye de
+                        // Redirect to home if already registered
                         window.location.replace("home.html");
                     } else {
-                        // Notun user hole form ta dekha
+                        // Reveal the form for new users
                         loadingOverlay.classList.add('hidden');
                         loadingOverlay.classList.remove('flex');
                     }
@@ -98,14 +102,15 @@
                 }
 
             } else {
-                // Login kora na thakle index.html e pathiye de
+                // If not logged in, kick back to index
                 window.location.replace("index.html");
             }
         });
 
+        // Handle Form Submission
         setupForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            loadingText.innerText = "Saving your details...";
+            loadingText.innerText = "Saving your details securely...";
             loadingOverlay.classList.remove('hidden');
             loadingOverlay.classList.add('flex');
 
@@ -118,7 +123,7 @@
             };
 
             try {
-                // Backend e data pathano hocche
+                // Send registration data to Render Backend (MongoDB)
                 const response = await fetch(`${BACKEND_URL}/api/students/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -128,7 +133,7 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    // Registration successful hole home page e pathiye de
+                    // Registration successful, send them to the Home Page
                     window.location.replace("home.html");
                 } else {
                     alert("Error: " + result.error);
@@ -137,7 +142,7 @@
                 }
             } catch (error) {
                 console.error("Save Error:", error);
-                alert("Failed to connect to the database.");
+                alert("Failed to connect to the database. Please check your internet connection and try again.");
                 loadingOverlay.classList.add('hidden');
                 loadingOverlay.classList.remove('flex');
             }
