@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Study Chapters - Chronex Classes</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #fffaf0; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        
+        /* Loading Screen Styles */
+        #page-loader {
+            position: fixed; inset: 0; background-color: #fffaf0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.3s ease;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid #e8d4f3; border-top: 5px solid #7851a9;
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<!-- Initial Full-Screen Loading Animation -->
+<div id="page-loader">
+    <div class="spinner"></div>
+    <p class="mt-4 text-[#7851a9] font-bold text-lg animate-pulse">Authenticating...</p>
+</div>
+
+<!-- Main Content (Hidden initially using inline style to prevent mobile conflicts) -->
+<div id="main-content" style="display: none;">
+    
+    <header class="bg-[#e8d4f3] p-4 m-2 sm:m-3 rounded-xl shadow-sm flex items-center gap-3 sm:gap-4 sticky top-0 z-50">
+        <a href="study.html" class="bg-white text-[#7851a9] px-3 sm:px-4 py-2 rounded-lg font-bold hover:shadow-md transition text-sm sm:text-base whitespace-nowrap">← Back</a>
+        <h2 class="text-lg sm:text-xl font-bold text-[#7851a9] truncate w-full" id="page-title">Loading...</h2>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-3 sm:p-4 mt-2 sm:mt-4 w-full">
+        <div id="chapters-container" class="flex flex-col gap-4 sm:gap-6 w-full">
+            <p class="text-center text-[#7851a9] animate-pulse font-semibold mt-10">Verifying your batch access securely...</p>
+        </div>
+    </main>
+
+</div>
+
+<script type="module">
+    // Only importing Auth. Database is now securely handled by the Render Backend.
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { auth } from "./firebase-setup.js";
+
+    // 🔗 THE MAGIC CONNECTION: Pointing to your Custom Render Backend
+    const BACKEND_URL = "https://chronex-api-server.onrender.com";
+    let currentUserEmail = "";
+    
+    // Function to hide the loading screen smoothly
+    function showMainContent() {
+        const loader = document.getElementById('page-loader');
+        const content = document.getElementById('main-content');
+        if(loader && content) {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+                content.style.display = 'block'; 
+            }, 300);
+        }
+    }
+
+    // Authentication Listener
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUserEmail = user.email;
+            try {
+                await verifyAndLoadChapters(); 
+            } catch(e) {
+                console.error("Error loading chapters:", e);
+                document.getElementById('chapters-container').innerHTML = `<p class="text-center text-red-500 font-bold mt-10">Server Connection Error. Please try again later.</p>`;
+            } finally {
+                showMainContent(); 
+            }
+        } else {
+            // Kick out unauthorized users
+            window.location.replace("index.html"); 
+        }
+    });
+
+    // Function to apply activation code via Custom Backend
+    window.applyActivationCode = async function(className, sessionYear) {
+        const codeInput = document.getElementById('activation-code').value.trim();
+        const errorMsg = document.getElementById('code-error');
+        const btn = document.getElementById('activate-btn');
+        
+        if(codeInput === "") { 
+            errorMsg.innerText = "Please enter an activation code!"; 
+            errorMsg.classList.remove('hidden'); 
+            return; 
+        }
+        
+        btn.innerText = "Verifying with Server...";
+        btn.disabled = true;
+
+        try {
+            // Sending request to Backend instead of Firebase
+            const response = await fetch(`${BACKEND_URL}/api/students/verify-code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: currentUserEmail,
+                    code: codeInput,
+                    className: className,
+                    year: sessionYear
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Success! Reload page to show chapters
+                window.location.reload();
+            } else {
+                // Show specific error from backend (e.g., Invalid code, already used)
+                errorMsg.innerText = result.error || "Invalid code or server error.";
+                errorMsg.classList.remove('hidden');
+                btn.innerText = "Activate Batch"; 
+                btn.disabled = false;
+            }
+
+        } catch (err) {
+            errorMsg.innerText = "Network error connecting to the secure server.";
+            errorMsg.classList.remove('hidden');
+            btn.innerText = "Activate Batch"; 
+            btn.disabled = false;
+        }
+    }
+
+    // Function to fetch chapters from backend
+    async function verifyAndLoadChapters() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionYear = urlParams.get('year');
+        const className = urlParams.get('class');
+        const container = document.getElementById('chapters-container');
+        
+        if(className && sessionYear) {
+            document.getElementById('page-title').innerText = `${className} - ${sessionYear} Chapters`;
+        } else {
+            document.getElementById('page-title').innerText = `Study Material`;
+        }
+
+        // STEP 1: Verify Access via Backend API
+        const accessResponse = await fetch(`${BACKEND_URL}/api/students/access/check?email=${encodeURIComponent(currentUserEmail)}&className=${encodeURIComponent(className)}&year=${encodeURIComponent(sessionYear)}`);
+        const accessData = await accessResponse.json();
+        
+        if (!accessResponse.ok || !accessData.hasAccess) {
+            // Show Activation Block
+            container.innerHTML = `
+                <div class="bg-white p-5 sm:p-8 rounded-xl shadow-md text-center border-t-4 border-red-500 mt-2 sm:mt-4 mx-auto w-full max-w-lg">
+                    <div class="text-4xl sm:text-5xl mb-3">🔒</div>
+                    <h3 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Access Restricted</h3>
+                    <p class="text-gray-600 mb-6 text-xs sm:text-sm px-2">You need a premium activation code to access the <br><b class="text-gray-800 text-base">${className} (${sessionYear})</b> batch.</p>
+                    
+                    <div class="bg-gray-50 p-4 sm:p-6 rounded-xl border border-gray-200">
+                        <h4 class="font-bold text-[#7851a9] mb-3 text-left text-sm sm:text-base">Have an Activation Code?</h4>
+                        <input type="text" id="activation-code" placeholder="E.G. CHX-9X2P" class="w-full p-3 border border-gray-300 rounded-lg mb-3 uppercase font-bold tracking-widest text-center outline-none focus:border-[#7851a9] focus:ring-2 focus:ring-[#e8d4f3] transition-all">
+                        <p id="code-error" class="text-red-500 text-xs sm:text-sm mb-3 hidden text-left font-semibold"></p>
+                        <button id="activate-btn" onclick="applyActivationCode('${className}', '${sessionYear}')" class="w-full bg-[#7851a9] text-white py-3 rounded-lg font-bold hover:bg-[#5a3a7c] transition-colors shadow-md text-sm sm:text-base active:scale-95 transform">Activate Batch</button>
+                    </div>
+                    <p class="text-[10px] sm:text-xs text-gray-400 mt-6 truncate px-2">Logged in as: ${currentUserEmail}</p>
+                </div>
+            `;
+            return; 
+        }
+
+        // STEP 2: Fetch Materials from Backend API
+        const materialsResponse = await fetch(`${BACKEND_URL}/api/materials?className=${encodeURIComponent(className)}&year=${encodeURIComponent(sessionYear)}`);
+        const materialsData = await materialsResponse.json();
+        
+        container.innerHTML = ''; 
+
+        if (!materialsResponse.ok || materialsData.length === 0) {
+            container.innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm text-center border border-gray-100">
+                    <div class="text-4xl mb-3 opacity-50">📂</div>
+                    <h3 class="text-lg font-bold text-gray-700">No content yet</h3>
+                    <p class="text-sm text-gray-500 mt-2">Lectures for this session will be uploaded soon by the Admin.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Group the fetched materials by Chapter
+        const chaptersMap = {};
+        materialsData.forEach((data) => {
+            if(!chaptersMap[data.chapter]) { chaptersMap[data.chapter] = []; }
+            chaptersMap[data.chapter].push(data); 
+        });
+
+        // Render the Chapters
+        for (const [chapterName, lectures] of Object.entries(chaptersMap)) {
+            const lectureCount = lectures.length;
+            const linkUrl = `lectures.html?class=${encodeURIComponent(className)}&year=${sessionYear}&chapter=${encodeURIComponent(chapterName)}`;
+            
+            container.innerHTML += `
+                <a href="${linkUrl}" class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border-l-4 border-[#7851a9] block hover:shadow-md hover:-translate-y-1 hover:border-[#5a3a7c] transition-all duration-300">
+                    <div class="flex justify-between items-center gap-3">
+                        <div class="overflow-hidden">
+                            <h3 class="text-lg sm:text-2xl font-bold text-gray-800 truncate">${chapterName}</h3>
+                            <p class="text-gray-500 mt-1 font-medium text-xs sm:text-sm">📺 ${lectureCount} Lecture(s) Available</p>
+                        </div>
+                        <div class="bg-[#f3effc] p-3 rounded-full text-[#7851a9] shadow-sm flex items-center justify-center flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+            `;
+        }
+    }
+</script>
+
+</body>
+</html>
