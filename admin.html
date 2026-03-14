@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Chronex Classes</title>
+    <link rel="icon" type="image/png" href="Logo_2.png" />
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         /* Body is hidden by default for security to prevent unauthorized access */
@@ -33,7 +34,6 @@
 </head>
 <body>
 
-    <!-- Upload Study Material Form -->
     <div class="admin-box">
         <h2>Upload Study Material</h2>
         <form id="upload-form">
@@ -63,12 +63,10 @@
                 <label for="details">Lecture Details (Optional)</label>
                 <input type="text" id="details" placeholder="e.g. Basics of Vector">
             </div>
-            <!-- Video Link: Accepts standard URLs or Embed Code -->
             <div class="form-group">
                 <label for="link">Video Link (YouTube URL or Embed Code)</label>
                 <input type="text" id="link" placeholder="e.g. https://youtu.be/... or <iframe...>" required>
             </div>
-            <!-- PDF Notes Link -->
             <div class="form-group">
                 <label for="pdf-link">Lecture Notes Link (Google Drive - Optional)</label>
                 <input type="url" id="pdf-link" placeholder="https://drive.google.com/file/d/.../view">
@@ -79,7 +77,6 @@
         <div id="upload-status" class="status-msg"></div>
     </div>
 
-    <!-- Generate Unique Code Form -->
     <div class="admin-box" style="border-top: 5px solid #d84315;">
         <h2 style="color: #d84315; border-color: #ffccbc;">Generate Student Access Code</h2>
         <p style="font-size: 13px; color: #666; text-align: center; margin-bottom: 15px;">Create a single-use unique code for a student after receiving payment.</p>
@@ -101,7 +98,6 @@
         
         <div id="access-status" class="status-msg"></div>
         
-        <!-- Box to show the newly generated code -->
         <div id="code-display-box" class="generated-code-box">
             <p style="margin:0; font-size: 14px; color: #555;">Give this code to the student:</p>
             <div class="code-text" id="final-code">CHX-XXXX</div>
@@ -109,7 +105,6 @@
         </div>
     </div>
 
-    <!-- History Table of Generated Codes -->
     <div class="admin-box" style="border-top: 5px solid #1976d2; max-width: 700px;">
         <h2 style="color: #1976d2; border-color: #bbdefb;">Generated Codes History</h2>
         <p style="font-size: 13px; color: #666; text-align: center; margin-bottom: 15px;">Track all your access codes and see who used them.</p>
@@ -130,7 +125,6 @@
         </div>
     </div>
 
-    <!-- UI Scripts for Dropdowns and Code Generation -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const class11Chapters = ["Basic Mathematics & Vectors", "Physical World and Measurement", "Kinematics", "Laws of Motion", "Work, Energy and Power", "System of Particles and Rotational Motion", "Gravitation", "Mechanical Properties of Solids", "Mechanical Properties of Fluids", "Thermal Properties of Matter", "Thermodynamics", "Kinetic Theory", "Oscillations", "Waves"];
@@ -154,7 +148,6 @@
             }
             classSelect.addEventListener('change', updateChapterOptions);
             updateChapterOptions();
-            window.updateChapterOptions = updateChapterOptions;
         });
 
         // Function to Generate Random Code strings locally
@@ -168,22 +161,21 @@
         }
     </script>
 
-    <!-- Firebase Auth and Backend API Scripts -->
     <script type="module">
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
         import { auth, db } from "./firebase-setup.js";
 
         // THE ULTIMATE HONEYPOT TRAP 
-        // Replace this with your actual admin email
-        const ADMIN_EMAIL = "arkod242@gmail.com"; 
+        // Authorized admin emails:
+        const ADMIN_EMAILS = ["arkodas.personal@gmail.com", "arkod242@gmail.com"]; 
 
-        // 🔗 NEW CONNECTION: Pointing to your Custom Render Backend
-        const BACKEND_URL = "https://chronex-api-server.onrender.com";
+        // 🔗 THE CORRECT RENDER BACKEND URL
+        const BACKEND_URL = "https://chronexclasses.onrender.com";
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                if (user.email === ADMIN_EMAIL || user.email === "arkodas.personal@gmail.com") {
+                if (ADMIN_EMAILS.includes(user.email)) {
                     // Authorized Admin - Reveal Dashboard
                     document.body.style.display = "flex"; 
                     loadCodeHistory(); 
@@ -234,7 +226,7 @@
                     pdfLink: document.getElementById('pdf-link').value.trim()
                 };
 
-                // Sending data to your Render Server instead of direct Firebase
+                // Sending data to your Render Server
                 const response = await fetch(`${BACKEND_URL}/api/admin/upload-material`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
