@@ -180,15 +180,61 @@
     &copy; <span id="year"></span> Chronex Classes. All rights reserved.
 </footer>
 
+  <!-- Install PWA Button -->
+  <button id="installBtn" class="hidden fixed bottom-20 right-5 bg-[#7851a9] text-white font-semibold px-4 py-2 rounded-full shadow-lg hover:bg-[#5a3a7c]">
+    Install App
+  </button>
+
+  <!-- Back to Top Button -->
+  <button onclick="window.scrollTo({top:0,behavior:'smooth'})" 
+    class="fixed bottom-5 right-5 bg-[#7851a9] text-white p-3 rounded-full shadow-lg hover:bg-[#5a3a7c]">
+    ⬆️
+  </button>
+
 <img id="my-floating-image" src="./My_Image.png" alt="Draggable Sticker" onerror="this.style.display='none'">
 
 <!-- UI & AI Integration Scripts -->
-<script>
+  <script>
+    // Dynamic year in footer
     document.getElementById('year').textContent = new Date().getFullYear();
 
+    // Mobile menu toggle function
     function toggleMenu() {
-        document.getElementById('mobileMenu').classList.toggle('active');
-        document.querySelector('.hamburger').classList.toggle('open');
+      const menu = document.getElementById('mobileMenu');
+      const hamburger = document.querySelector('.hamburger');
+      hamburger.classList.toggle('open');
+      menu.classList.toggle('active');
+    }
+
+    // Highlight active link
+    document.querySelectorAll('nav a, .mobile-menu a').forEach(link => {
+      if (link.href === window.location.href) {
+        link.classList.add('active');
+      }
+    });
+
+    // PWA install prompt
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.classList.remove('hidden');
+    });
+
+    installBtn.addEventListener('click', async () => {
+      installBtn.classList.add('hidden');
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    });
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('./sw.js').then(() => 
+        console.log('Service Worker Registered Successfully')
+      ).catch(e => console.warn('Service Worker registration skipped or failed:', e));
     }
 
     // --- SECURE GEMINI AI SEARCH LOGIC ---
