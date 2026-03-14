@@ -4,6 +4,12 @@
     <title>Study Chapters - Chronex Classes</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Web App Manifest for Mobile Experience -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e8d4f3">
+    <link rel="icon" type="image/png" href="Logo_2.png" />
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #fffaf0; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
@@ -28,7 +34,7 @@
     <p class="mt-4 text-[#7851a9] font-bold text-lg animate-pulse">Authenticating...</p>
 </div>
 
-<!-- Main Content (Hidden initially using inline style to prevent mobile conflicts) -->
+<!-- Main Content (Hidden initially for security) -->
 <div id="main-content" style="display: none;">
     
     <header class="bg-[#e8d4f3] p-4 m-2 sm:m-3 rounded-xl shadow-sm flex items-center gap-3 sm:gap-4 sticky top-0 z-50">
@@ -45,12 +51,12 @@
 </div>
 
 <script type="module">
-    // Only importing Auth. Database is now securely handled by the Render Backend.
+    // Only importing Auth. Database is securely handled by the Render Backend now!
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
     import { auth } from "./firebase-setup.js";
 
     // 🔗 THE MAGIC CONNECTION: Pointing to your Custom Render Backend
-    const BACKEND_URL = "https://chronex-api-server.onrender.com";
+    const BACKEND_URL = "https://chronexclasses.onrender.com";
     let currentUserEmail = "";
     
     // Function to hide the loading screen smoothly
@@ -79,7 +85,7 @@
                 showMainContent(); 
             }
         } else {
-            // Kick out unauthorized users
+            // Kick out unauthorized users to the login page
             window.location.replace("index.html"); 
         }
     });
@@ -100,7 +106,7 @@
         btn.disabled = true;
 
         try {
-            // Sending request to Backend instead of Firebase
+            // Sending verification request to your Render Server
             const response = await fetch(`${BACKEND_URL}/api/students/verify-code`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -115,7 +121,7 @@
             const result = await response.json();
 
             if (response.ok) {
-                // Success! Reload page to show chapters
+                // Success! Reload the page to unlock the chapters
                 window.location.reload();
             } else {
                 // Show specific error from backend (e.g., Invalid code, already used)
@@ -133,7 +139,7 @@
         }
     }
 
-    // Function to fetch chapters from backend
+    // Function to fetch chapters from the secure backend
     async function verifyAndLoadChapters() {
         const urlParams = new URLSearchParams(window.location.search);
         const sessionYear = urlParams.get('year');
@@ -151,7 +157,7 @@
         const accessData = await accessResponse.json();
         
         if (!accessResponse.ok || !accessData.hasAccess) {
-            // Show Activation Block
+            // Show Activation Block if access is denied
             container.innerHTML = `
                 <div class="bg-white p-5 sm:p-8 rounded-xl shadow-md text-center border-t-4 border-red-500 mt-2 sm:mt-4 mx-auto w-full max-w-lg">
                     <div class="text-4xl sm:text-5xl mb-3">🔒</div>
@@ -160,7 +166,7 @@
                     
                     <div class="bg-gray-50 p-4 sm:p-6 rounded-xl border border-gray-200">
                         <h4 class="font-bold text-[#7851a9] mb-3 text-left text-sm sm:text-base">Have an Activation Code?</h4>
-                        <input type="text" id="activation-code" placeholder="E.G. CHX-9X2P" class="w-full p-3 border border-gray-300 rounded-lg mb-3 uppercase font-bold tracking-widest text-center outline-none focus:border-[#7851a9] focus:ring-2 focus:ring-[#e8d4f3] transition-all">
+                        <input type="text" id="activation-code" placeholder="E.G. CHX12-25-A1B2C" class="w-full p-3 border border-gray-300 rounded-lg mb-3 uppercase font-bold tracking-widest text-center outline-none focus:border-[#7851a9] focus:ring-2 focus:ring-[#e8d4f3] transition-all">
                         <p id="code-error" class="text-red-500 text-xs sm:text-sm mb-3 hidden text-left font-semibold"></p>
                         <button id="activate-btn" onclick="applyActivationCode('${className}', '${sessionYear}')" class="w-full bg-[#7851a9] text-white py-3 rounded-lg font-bold hover:bg-[#5a3a7c] transition-colors shadow-md text-sm sm:text-base active:scale-95 transform">Activate Batch</button>
                     </div>
@@ -170,7 +176,7 @@
             return; 
         }
 
-        // STEP 2: Fetch Materials from Backend API
+        // STEP 2: Fetch Materials from Backend API (If access is granted)
         const materialsResponse = await fetch(`${BACKEND_URL}/api/materials?className=${encodeURIComponent(className)}&year=${encodeURIComponent(sessionYear)}`);
         const materialsData = await materialsResponse.json();
         
@@ -187,14 +193,14 @@
             return;
         }
 
-        // Group the fetched materials by Chapter
+        // Group the fetched materials by Chapter Name
         const chaptersMap = {};
         materialsData.forEach((data) => {
             if(!chaptersMap[data.chapter]) { chaptersMap[data.chapter] = []; }
             chaptersMap[data.chapter].push(data); 
         });
 
-        // Render the Chapters
+        // Render the Chapter Cards
         for (const [chapterName, lectures] of Object.entries(chaptersMap)) {
             const lectureCount = lectures.length;
             const linkUrl = `lectures.html?class=${encodeURIComponent(className)}&year=${sessionYear}&chapter=${encodeURIComponent(chapterName)}`;
