@@ -23,15 +23,15 @@
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background-color: #000; width: 100%; }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; z-index: 10; }
         
-        /* Dynamic Watermark for Anti-Piracy (Updated for less distraction) */
+        /* Dynamic Watermark for Anti-Piracy */
         .watermark {
             position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
-            color: rgba(255, 255, 255, 0.1); /* Reduced opacity to 10% */
+            color: rgba(255, 255, 255, 0.1); 
             font-size: 1.2rem; 
             font-weight: bold; pointer-events: none; z-index: 20;
             user-select: none; white-space: nowrap; 
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* Softer shadow */
-            animation: moveWatermark 90s infinite alternate linear; /* Much slower and smoother animation */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5); 
+            animation: moveWatermark 90s infinite alternate linear; 
         }
         @keyframes moveWatermark {
             0% { top: 20%; left: 20%; } 25% { top: 80%; left: 30%; } 50% { top: 50%; left: 80%; }
@@ -120,7 +120,6 @@
         </div>
         
         <div class="video-container w-full relative">
-            <!-- Anti-click layer removed to allow Play/Pause/Settings functionality -->
             <div id="student-watermark" class="watermark"></div>
             <!-- The iframe will be dynamically injected here -->
             <div id="videoPlayerContainer" class="absolute top-0 left-0 w-full h-full"></div>
@@ -147,7 +146,7 @@
     import { collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { auth, db } from "./firebase-setup.js";
 
-    // 🔗 THE MAGIC CONNECTION: Pointing to your Custom Render Backend
+    // CONNECTION: Pointing to your Custom Render Backend
     const BACKEND_URL = "https://chronexclasses.onrender.com";
 
     let currentUserEmail = "";
@@ -161,7 +160,7 @@
     let currentVideoId = null;
     let progressTimer = null;
 
-    // Bulletproof Loader Hider Function
+    // Loader Hider Function
     function showMainContent() {
         const loader = document.getElementById('page-loader');
         const content = document.getElementById('main-content');
@@ -174,19 +173,23 @@
         }
     }
 
-    // Bulletproof YouTube ID Extractor (Upgraded)
+    // Super Bulletproof YouTube ID Extractor (Handles URLs and raw embed iframes)
     function getYTVideoId(url) {
         if (!url) return null;
         let str = String(url).trim();
         
-        // If it's just the 11 character ID
+        // 1. If it's already an 11 character ID
         if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
 
-        // Extract from standard URLs, youtu.be, shorts, or iframe src
+        // 2. Extract from standard URLs, youtu.be, shorts
         let match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
         if (match && match[1]) return match[1];
 
-        // Aggressive fallback for dirty strings or iframe tags
+        // 3. Extract from an iframe embed code if pasted directly
+        let iframeMatch = str.match(/embed\/([a-zA-Z0-9_-]{11})/);
+        if (iframeMatch && iframeMatch[1]) return iframeMatch[1];
+
+        // 4. Aggressive fallback for dirty strings
         let aggressiveMatch = str.match(/(?:v=|embed\/|\/v\/|youtu\.be\/|\/e\/|watch\?v=|&v=|\?v=)([a-zA-Z0-9_-]{11})/);
         if (aggressiveMatch && aggressiveMatch[1]) return aggressiveMatch[1];
 
