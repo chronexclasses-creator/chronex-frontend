@@ -23,28 +23,27 @@
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background-color: #000; width: 100%; }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; z-index: 10; }
         
-        /* Dynamic Watermark for Anti-Piracy */
+        /* Dynamic Watermark for Anti-Piracy (Updated for less distraction) */
         .watermark {
             position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
-            color: rgba(255, 255, 255, 0.2); 
-            font-size: 1rem; 
+            color: rgba(255, 255, 255, 0.1); /* Reduced opacity to 10% */
+            font-size: 1.2rem; 
             font-weight: bold; pointer-events: none; z-index: 20;
             user-select: none; white-space: nowrap; 
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8); 
-            animation: moveWatermark 40s infinite alternate ease-in-out; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* Softer shadow */
+            animation: moveWatermark 90s infinite alternate linear; /* Much slower and smoother animation */
         }
         @keyframes moveWatermark {
             0% { top: 20%; left: 20%; } 25% { top: 80%; left: 30%; } 50% { top: 50%; left: 80%; }
             75% { top: 30%; left: 60%; } 100% { top: 70%; left: 20%; }
         }
-        .anti-click-layer { position: absolute; top: 0; left: 0; width: 100%; height: 75%; z-index: 15; pointer-events: auto; }
         
         /* Custom Scrollbar for Dashboard */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #e8d4f3; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #7851a9; }
 
-        /* Fullscreen CSS Fixes for Mobile Landscape to prevent app background from showing */
+        /* Fullscreen CSS Fixes */
         #videoModal { background-color: #000 !important; }
         #videoModalContent { background-color: #000; }
 
@@ -121,9 +120,9 @@
         </div>
         
         <div class="video-container w-full relative">
-            <div class="anti-click-layer" oncontextmenu="return false;"></div>
+            <!-- Anti-click layer removed to allow Play/Pause/Settings functionality -->
             <div id="student-watermark" class="watermark"></div>
-            <!-- The iframe will be dynamically injected here to prevent blank players -->
+            <!-- The iframe will be dynamically injected here -->
             <div id="videoPlayerContainer" class="absolute top-0 left-0 w-full h-full"></div>
         </div>
     </div>
@@ -131,7 +130,9 @@
 
 <!-- ANTI-PIRACY SCRIPTS -->
 <script>
+    // Disable right-click globally to prevent saving the page or easy inspection
     document.addEventListener('contextmenu', event => event.preventDefault());
+    // Disable dev tools keyboard shortcuts
     document.onkeydown = function(e) {
         if (e.keyCode === 123) { return false; } 
         if (e.ctrlKey && e.shiftKey && e.keyCode === 'I'.charCodeAt(0)) { return false; } 
@@ -143,7 +144,6 @@
 
 <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-    // We still use Firestore locally just to save the user's viewing progress
     import { collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { auth, db } from "./firebase-setup.js";
 
@@ -174,23 +174,26 @@
         }
     }
 
-    // Extractor: Safely strips the 11 character ID out of embedded iframes, shorts, or messy URLs
+    // Bulletproof YouTube ID Extractor (Upgraded)
     function getYTVideoId(url) {
         if (!url) return null;
         let str = String(url).trim();
         
+        // If it's just the 11 character ID
         if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
 
-        let match = str.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/);
+        // Extract from standard URLs, youtu.be, shorts, or iframe src
+        let match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
         if (match && match[1]) return match[1];
 
-        let aggressiveMatch = str.match(/(?:v=|embed\/|\/v\/|youtu\.be\/|\/e\/|watch\?v=|&v=|\?v=)([a-zA-Z0-9_-]{11})(?:[#?&"'>]|$)/);
+        // Aggressive fallback for dirty strings or iframe tags
+        let aggressiveMatch = str.match(/(?:v=|embed\/|\/v\/|youtu\.be\/|\/e\/|watch\?v=|&v=|\?v=)([a-zA-Z0-9_-]{11})/);
         if (aggressiveMatch && aggressiveMatch[1]) return aggressiveMatch[1];
 
         return null;
     }
 
-    // Save Progress to Firestore & Update UI (Hybrid Model)
+    // Save Progress to Firestore & Update UI
     window.saveProgress = async function() {
         if (!window.player || typeof window.player.getCurrentTime !== 'function' || !currentVideoId) return;
         
@@ -237,8 +240,8 @@
     }
 
     window.playVideo = function(videoId, lectureNum, lectureDetails = '') {
-        if (!videoId) {
-            alert("Video Link Error! Please contact the admin.");
+        if (!videoId || videoId === "null") {
+            alert("Video Link is broken or not extracted properly! Please contact the admin.");
             return;
         }
         if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
@@ -256,7 +259,8 @@
         watermark.innerText = currentUserEmail;
         currentVideoId = videoId;
 
-        playerContainer.innerHTML = `<iframe id="yt-iframe" src="https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&rel=0&modestbranding=1&controls=1&fs=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute top-0 left-0 w-full h-full border-0 z-10"></iframe>`;
+        // Configured for maximum privacy and minimal recommendations (rel=0 restricts to own channel)
+        playerContainer.innerHTML = `<iframe id="yt-iframe" src="https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&autoplay=1&rel=0&modestbranding=1&controls=1&fs=1&iv_load_policy=3" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute top-0 left-0 w-full h-full border-0 z-10"></iframe>`;
 
         setTimeout(() => {
             if (typeof YT !== 'undefined' && YT.Player) {
@@ -424,7 +428,7 @@
             const rawLink = l.link || l.videoUrl || l.url || l.video_link || "";
             const videoId = getYTVideoId(rawLink);
             
-            // Thumbnail logic: using high-quality default
+            // Thumbnail logic: upgraded extractor ensures this works reliably
             let thumbHtml = '';
             if (videoId) {
                 thumbHtml = `<img src="https://i.ytimg.com/vi/${videoId}/hqdefault.jpg" 
