@@ -58,7 +58,7 @@
 <!-- ⏳ Initial Full-Screen Loading Animation -->
 <div id="page-loader">
     <div class="spinner"></div>
-    <p class="mt-4 text-[#7851a9] font-bold text-lg animate-pulse">Authenticating...</p>
+    <p class="mt-4 text-[#7851a9] font-bold text-lg animate-pulse">Authenticating & Loading Sessions...</p>
 </div>
 
 <!-- Main Content (Hidden initially for security) -->
@@ -99,9 +99,8 @@
                 <p class="text-gray-700 text-justify mb-6 flex-grow">
                     Designed to help students make a smooth transition. This program builds <b>strong fundamentals</b> in Physics to prepare for boards and JEE/NEET.
                 </p>
-                <div class="w-full flex flex-col gap-2 mt-auto">
-                    <a href="chapters.html?class=Class%2011&year=2025" class="session-btn">2025 Session</a>
-                    <a href="chapters.html?class=Class%2011&year=2026" class="session-btn">2026 Session</a>
+                <div id="class-11-sessions" class="w-full flex flex-col gap-2 mt-auto">
+                    <span class="text-sm text-[#7851a9] italic text-center w-full animate-pulse">Loading sessions...</span>
                 </div>
             </div>
 
@@ -112,9 +111,8 @@
                 <p class="text-gray-700 text-justify mb-6 flex-grow">
                     A focused course structured to <b>strengthen problem-solving</b>. It ensures complete coverage of Class 12 syllabus for Board & Competitive exams.
                 </p>
-                <div class="w-full flex flex-col gap-2 mt-auto">
-                    <a href="chapters.html?class=Class%2012&year=2025" class="session-btn">2025 Session</a>
-                    <a href="chapters.html?class=Class%2012&year=2026" class="session-btn">2026 Session</a>
+                <div id="class-12-sessions" class="w-full flex flex-col gap-2 mt-auto">
+                    <span class="text-sm text-[#7851a9] italic text-center w-full animate-pulse">Loading sessions...</span>
                 </div>
             </div>
 
@@ -125,9 +123,8 @@
                 <p class="text-gray-700 text-justify mb-6 flex-grow">
                     An intensive program designed for dedicated aspirants aiming to <b>rebuild concepts and maximize performance</b> in JEE/NEET.
                 </p>
-                <div class="w-full flex flex-col gap-2 mt-auto">
-                    <a href="chapters.html?class=Dropper&year=2025" class="session-btn">2025 Session</a>
-                    <a href="chapters.html?class=Dropper&year=2026" class="session-btn">2026 Session</a>
+                <div id="dropper-sessions" class="w-full flex flex-col gap-2 mt-auto">
+                    <span class="text-sm text-[#7851a9] italic text-center w-full animate-pulse">Loading sessions...</span>
                 </div>
             </div>
         </div>
@@ -147,34 +144,101 @@
     document.getElementById('year').textContent = new Date().getFullYear();
 </script>
 
-<!-- Security & Auth Script -->
+<!-- Security, Auth & Dynamic Session Script -->
 <script type="module">
-    // We only need Authentication here to secure the page
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
     import { auth } from "./firebase-setup.js";
+
+    const BACKEND_URL = "https://chronexclasses.onrender.com";
 
     // Function to smoothly hide the loading screen
     function showMainContent() {
         const loader = document.getElementById('page-loader');
         const content = document.getElementById('main-content');
-        
-        loader.style.opacity = '0';
+        if (loader) loader.style.opacity = '0';
         setTimeout(() => {
-            loader.style.display = 'none';
+            if (loader) loader.style.display = 'none';
             content.classList.remove('hidden');
         }, 300);
     }
 
     // Strict Security Guard: Only authenticated users can see the programs
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // Authorized User - Reveal the Dashboard
-            showMainContent();
+            // 🔥 FAILSAFE: Force the loader to hide after 8 seconds no matter what
+            const failsafeTimer = setTimeout(() => {
+                showMainContent();
+            }, 8000);
+
+            try {
+                // Fetch sessions dynamically from the Render Backend
+                await loadDynamicSessions();
+            } catch(e) {
+                console.error("Session load error:", e);
+            } finally {
+                clearTimeout(failsafeTimer);
+                showMainContent(); // ALWAYS execute this
+            }
         } else {
             // Unauthorized User - Kick back to Login Page
             window.location.replace("index.html");
         }
     });
+
+    // Fetch uploaded videos to create dynamic "Year" buttons under each class
+    async function loadDynamicSessions() {
+        try {
+            const sessions = { 'Class 11': new Set(), 'Class 12': new Set(), 'Dropper': new Set() };
+            
+            // Calling your Custom Render Backend API
+            const response = await fetch(`${BACKEND_URL}/api/materials`);
+            if (!response.ok) throw new Error("Failed to fetch from backend");
+            
+            const dataArray = await response.json();
+            
+            // Loop through MongoDB data to find unique years per class
+            dataArray.forEach((data) => {
+                if (data.className && data.year && sessions[data.className]) {
+                    sessions[data.className].add(data.year);
+                }
+            });
+
+            // Creates the buttons and links them to chapters.html
+            const renderButtons = (classKey, containerId) => {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                const years = Array.from(sessions[classKey]).sort();
+                container.innerHTML = ''; 
+
+                if (years.length === 0) {
+                    container.innerHTML = `<p class="text-sm text-gray-400 italic text-center w-full mt-2">No sessions uploaded yet</p>`;
+                    return;
+                }
+
+                years.forEach(year => {
+                    const btn = document.createElement('a');
+                    // Links to chapters.html and passes the class and year in the URL
+                    btn.href = `chapters.html?class=${encodeURIComponent(classKey)}&year=${year}`;
+                    btn.className = "session-btn";
+                    btn.innerText = `${year} Session`;
+                    container.appendChild(btn);
+                });
+            };
+
+            renderButtons('Class 11', 'class-11-sessions');
+            renderButtons('Class 12', 'class-12-sessions');
+            renderButtons('Dropper', 'dropper-sessions');
+
+        } catch (error) {
+            console.error("Error fetching sessions:", error);
+            const errorMsg = `<p class="text-sm text-red-500 italic text-center w-full mt-2">Failed to load</p>`;
+            document.getElementById('class-11-sessions').innerHTML = errorMsg;
+            document.getElementById('class-12-sessions').innerHTML = errorMsg;
+            document.getElementById('dropper-sessions').innerHTML = errorMsg;
+            throw error; // Re-throw so finally block executes
+        }
+    }
 </script>
 </body>
 </html>
