@@ -58,23 +58,138 @@
         #aiAnswerText strong { font-weight: 700; color: #5a3a7c; }
 
         /* Mobile Menu Settings */
-        .hamburger { display: none; flex-direction: column; cursor: pointer; gap: 5px; padding: 5px; border-radius: 4px; background-color: #7851a9; }
-        .hamburger div { width: 25px; height: 3px; background-color: #fffaf0; border-radius: 2px; transition: all 0.3s ease-in-out; }
-        .hamburger.open div:nth-child(1) { transform: translateY(8px) rotate(45deg); }
-        .hamburger.open div:nth-child(2) { opacity: 0; }
-        .hamburger.open div:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      cursor: pointer;
+      gap: 5px;
+      padding: 5px;
+      border-radius: 4px;
+      background-color: #7851a9;
+      transition: background-color 0.3s;
+    }
 
-        .mobile-menu { display: flex; flex-direction: column; max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out; position: absolute; top: 70px; right: 10px; background-color: #e8d4f3; border: 1px solid #7851a9; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: calc(100% - 20px); z-index: 999; }
-        .mobile-menu.active { max-height: 300px; opacity: 1; padding: 10px 0; }
-        @media (max-width: 768px) { nav { display: none; } .hamburger { display: flex; } .mobile-menu a { padding: 10px 20px; color: #7851a9; font-weight: 600; } .mobile-menu a:hover { background-color: #fffaf0; padding-left: 25px; } }
+    .hamburger div {
+      width: 25px;
+      height: 3px;
+      background-color: #fffaf0;
+      border-radius: 2px;
+      transition: all 0.3s ease-in-out;
+    }
+    
+    .hamburger.open div:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+    .hamburger.open div:nth-child(2) { opacity: 0; }
+    .hamburger.open div:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
 
-        /* Feature Cards */
-        .feature-card { background-color: white; border: 1px solid #e8d4f3; border-radius: 12px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); transition: transform 0.3s ease-out, box-shadow 0.3s ease-out; cursor: pointer; min-height: 120px; display: flex; flex-direction: column; justify-content: center; }
-        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(120, 81, 169, 0.2); border-color: #7851a9; }
+    .mobile-menu {
+      display: flex;
+      flex-direction: column;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out; 
+      position: absolute;
+      top: 70px;
+      right: 10px;
+      background-color: #e8d4f3;
+      border: 1px solid #7851a9;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      width: calc(100% - 20px);
+      z-index: 999;
+      padding: 0;
+    }
+    
+    .mobile-menu.active {
+      max-height: 300px;
+      opacity: 1;
+      padding: 10px 0;
+    }
 
-        /* Floating Mascot/Sticker */
-        #my-floating-image { position: fixed; top: 50px; left: 50px; width: 150px; z-index: 10000; cursor: move; user-select: none; touch-action: none; display: none; }
-    </style>
+    @media (max-width: 768px) {
+      nav { display: none; }
+      .hamburger { display: flex; }
+      .mobile-menu a {
+        padding: 10px 20px;
+        color: #7851a9;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background-color 0.2s, padding-left 0.2s;
+      }
+      .mobile-menu a:hover,
+      .mobile-menu a.active {
+        background-color: #fffaf0;
+        padding-left: 25px;
+      }
+    }
+
+    main.container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 30px 20px;
+    }
+
+    footer {
+      background-color: #7851a9;
+      color: white;
+      text-align: center;
+      padding: 12px;
+      margin-top: 40px;
+      font-size: 14px;
+    }
+
+    .feature-card {
+      background-color: white;
+      border: 1px solid #e8d4f3;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+      cursor: pointer;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(120, 81, 169, 0.2);
+      border-color: #7851a9;
+    }
+
+    @keyframes pulse-once {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(120, 81, 169, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(120, 81, 169, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(120, 81, 169, 0); }
+    }
+    
+    .cta-pulse {
+      animation: pulse-once 2s infinite cubic-bezier(0.66, 0.01, 0, 1);
+    }
+    
+    .cta-button {
+      transition: background-color 0.3s, transform 0.1s;
+    }
+    
+    .cta-button:active {
+      transform: scale(0.98);
+    }
+    #installAppBtn { display: none; }
+
+    #my-floating-image {
+        position: fixed;       
+        top: 50px;             
+        left: 50px;            
+        width: 150px;          
+        z-index: 10000;        
+        cursor: move;          
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: none;
+        display: none; /* 🛑 Hidden by default */
+    }
+  </style>
 </head>
 
 <!-- Body is hidden by default. Revealed only if Firebase Auth is valid -->
