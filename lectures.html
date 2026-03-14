@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Lectures - Chronex Classes</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #fffaf0; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        
+        /* Loading Screen Styles */
+        #page-loader {
+            position: fixed; inset: 0; background-color: #fffaf0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.3s ease;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid #e8d4f3; border-top: 5px solid #7851a9;
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background-color: #000; width: 100%; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; z-index: 10; }
+        
+        /* Dynamic Watermark for Anti-Piracy */
+        .watermark {
+            position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.2); 
+            font-size: 1rem; 
+            font-weight: bold; pointer-events: none; z-index: 20;
+            user-select: none; white-space: nowrap; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8); 
+            animation: moveWatermark 40s infinite alternate ease-in-out; 
+        }
+        @keyframes moveWatermark {
+            0% { top: 20%; left: 20%; } 25% { top: 80%; left: 30%; } 50% { top: 50%; left: 80%; }
+            75% { top: 30%; left: 60%; } 100% { top: 70%; left: 20%; }
+        }
+        .anti-click-layer { position: absolute; top: 0; left: 0; width: 100%; height: 75%; z-index: 15; pointer-events: auto; }
+        
+        /* Custom Scrollbar for Dashboard */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #e8d4f3; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #7851a9; }
+
+        /* Fullscreen CSS Fixes for Mobile Landscape to prevent app background from showing */
+        #videoModal { background-color: #000 !important; }
+        #videoModalContent { background-color: #000; }
+
+        #videoModal:fullscreen { padding: 0 !important; background-color: #000; }
+        #videoModal:fullscreen #videoModalContent { max-width: 100%; height: 100vh; max-height: 100vh; border-radius: 0; display: block; }
+        #videoModal:fullscreen .video-container { height: 100vh; padding-bottom: 0; }
+        #videoModal:fullscreen #video-top-bar { display: none !important; } 
+        
+        /* Safari Fullscreen Fixes */
+        #videoModal:-webkit-full-screen { padding: 0 !important; background-color: #000; }
+        #videoModal:-webkit-full-screen #videoModalContent { width: 100vw; height: 100vh; border-radius: 0; display: block; }
+        #videoModal:-webkit-full-screen .video-container { height: 100vh; padding-bottom: 0; }
+        #videoModal:-webkit-full-screen #video-top-bar { display: none !important; } 
+    </style>
+    <!-- Load YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body>
+
+<!-- Initial Full-Screen Loading Animation -->
+<div id="page-loader">
+    <div class="spinner"></div>
+    <p class="mt-4 text-[#7851a9] font-bold text-lg animate-pulse">Loading Classroom...</p>
+</div>
+
+<!-- Main Content -->
+<div id="main-content" style="display: none;">
+
+    <header class="bg-[#e8d4f3] p-4 m-2 sm:m-3 rounded-xl shadow-sm flex items-center gap-3 sm:gap-4 sticky top-0 z-40">
+        <a href="#" id="back-btn" class="bg-white text-[#7851a9] px-3 sm:px-4 py-2 rounded-lg font-bold hover:shadow-md transition text-sm sm:text-base whitespace-nowrap">← Back</a>
+        <h2 class="text-lg sm:text-xl font-bold text-[#7851a9] truncate w-full" id="page-title">Loading Classroom...</h2>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-3 sm:p-4 mt-2">
+        
+        <!-- Global Progress Dashboard -->
+        <div class="bg-white rounded-xl shadow-md p-5 sm:p-6 mb-6 border border-[#e8d4f3]">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-800" id="chapter-title">Fetching Lectures...</h1>
+                    <p class="text-[#7851a9] font-semibold mt-1 text-sm sm:text-base" id="chapter-subtitle"></p>
+                </div>
+                
+                <div class="bg-[#fcf8ff] p-3 rounded-lg border-2 border-[#f3effc] w-full sm:w-auto text-center sm:text-right">
+                    <p class="text-xs text-gray-500 font-bold uppercase tracking-wide">Total Time Watched</p>
+                    <p class="text-xl font-extrabold text-[#7851a9]" id="stat-time">0h 0m</p>
+                </div>
+            </div>
+
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2 mt-4 relative overflow-hidden">
+                <div id="stat-progress-bar" class="bg-[#7851a9] h-2.5 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between text-xs font-bold text-gray-500">
+                <span>Course Progress</span>
+                <span id="stat-completed">0 / 0 Lectures</span>
+            </div>
+        </div>
+
+        <!-- Lectures Grid Container -->
+        <div id="lectures-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+            <!-- Videos and PDF notes will be injected here dynamically -->
+        </div>
+    </main>
+
+</div>
+
+<!-- In-Built Video Player Modal -->
+<div id="videoModal" class="hidden fixed inset-0 bg-black z-[9999] flex justify-center items-center p-0 sm:p-6 opacity-0 transition-opacity duration-300">
+    <div class="w-full max-w-5xl h-full sm:h-auto sm:max-h-[90vh] bg-black sm:rounded-xl overflow-hidden shadow-2xl transform scale-95 transition-transform duration-300 relative flex flex-col justify-center" id="videoModalContent">
+        
+        <div id="video-top-bar" class="bg-[#222] px-4 py-3 flex justify-between items-center z-30 relative absolute top-0 w-full sm:static">
+            <h3 class="text-gray-200 font-bold truncate pr-4 text-sm sm:text-base" id="modal-title">Lecture Video</h3>
+            <button onclick="closeVideo()" class="text-gray-400 hover:text-white text-3xl leading-none font-bold focus:outline-none">&times;</button>
+        </div>
+        
+        <div class="video-container w-full relative">
+            <div class="anti-click-layer" oncontextmenu="return false;"></div>
+            <div id="student-watermark" class="watermark"></div>
+            <!-- The iframe will be dynamically injected here to prevent blank players -->
+            <div id="videoPlayerContainer" class="absolute top-0 left-0 w-full h-full"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ANTI-PIRACY SCRIPTS -->
+<script>
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.onkeydown = function(e) {
+        if (e.keyCode === 123) { return false; } 
+        if (e.ctrlKey && e.shiftKey && e.keyCode === 'I'.charCodeAt(0)) { return false; } 
+        if (e.ctrlKey && e.shiftKey && e.keyCode === 'J'.charCodeAt(0)) { return false; } 
+        if (e.ctrlKey && e.keyCode === 'U'.charCodeAt(0)) { return false; } 
+        if (e.ctrlKey && e.shiftKey && e.keyCode === 'C'.charCodeAt(0)) { return false; } 
+    };
+</script>
+
+<script type="module">
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    // We still use Firestore locally just to save the user's viewing progress
+    import { collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { auth, db } from "./firebase-setup.js";
+
+    // 🔗 THE MAGIC CONNECTION: Pointing to your Custom Render Backend
+    const BACKEND_URL = "https://chronexclasses.onrender.com";
+
+    let currentUserEmail = "";
+    let currentClassName = "";
+    let currentSessionYear = "";
+    let totalLecturesCount = 0;
+    
+    // Progress Tracking Variables
+    let userProgressData = {}; 
+    window.player = null;
+    let currentVideoId = null;
+    let progressTimer = null;
+
+    // Bulletproof Loader Hider Function
+    function showMainContent() {
+        const loader = document.getElementById('page-loader');
+        const content = document.getElementById('main-content');
+        if(loader && content) {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+                content.style.display = 'block'; 
+            }, 300);
+        }
+    }
+
+    // Extractor: Safely strips the 11 character ID out of embedded iframes, shorts, or messy URLs
+    function getYTVideoId(url) {
+        if (!url) return null;
+        let str = String(url).trim();
+        
+        if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+
+        let match = str.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/);
+        if (match && match[1]) return match[1];
+
+        let aggressiveMatch = str.match(/(?:v=|embed\/|\/v\/|youtu\.be\/|\/e\/|watch\?v=|&v=|\?v=)([a-zA-Z0-9_-]{11})(?:[#?&"'>]|$)/);
+        if (aggressiveMatch && aggressiveMatch[1]) return aggressiveMatch[1];
+
+        return null;
+    }
+
+    // Save Progress to Firestore & Update UI (Hybrid Model)
+    window.saveProgress = async function() {
+        if (!window.player || typeof window.player.getCurrentTime !== 'function' || !currentVideoId) return;
+        
+        try {
+            const currentTime = window.player.getCurrentTime();
+            const duration = window.player.getDuration();
+            if (duration <= 0) return;
+
+            let percentage = Math.floor((currentTime / duration) * 100);
+            
+            const existingData = userProgressData[currentVideoId] || { percentage: 0, watchedSeconds: 0 };
+            if (percentage < existingData.percentage) {
+                percentage = existingData.percentage;
+            }
+            let maxWatched = Math.max(existingData.watchedSeconds, currentTime);
+
+            userProgressData[currentVideoId] = { watchedSeconds: maxWatched, percentage: percentage };
+
+            const progressBar = document.getElementById(`progress-bar-${currentVideoId}`);
+            const progressText = document.getElementById(`progress-text-${currentVideoId}`);
+            if(progressBar) progressBar.style.width = `${percentage}%`;
+            if(progressText) progressText.innerText = `${percentage}%`;
+            
+            updateGlobalStatsUI();
+
+            const progressRef = doc(db, 'student_progress', `${currentUserEmail}_${currentClassName}_${currentSessionYear}`, 'videos', currentVideoId);
+            await setDoc(progressRef, {
+                watchedSeconds: maxWatched,
+                percentage: percentage,
+                lastUpdated: new Date()
+            }, { merge: true });
+        } catch (e) {
+            console.error("Error saving progress", e);
+        }
+    }
+
+    window.onPlayerStateChange = function(event) {
+        if (event.data == YT.PlayerState.PLAYING) {
+            progressTimer = setInterval(window.saveProgress, 5000);
+        } else {
+            clearInterval(progressTimer);
+            window.saveProgress(); 
+        }
+    }
+
+    window.playVideo = function(videoId, lectureNum, lectureDetails = '') {
+        if (!videoId) {
+            alert("Video Link Error! Please contact the admin.");
+            return;
+        }
+        if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+            alert("Video player is still loading. Please try again in a few seconds.");
+            return;
+        }
+
+        const modal = document.getElementById('videoModal');
+        const modalContent = document.getElementById('videoModalContent');
+        const watermark = document.getElementById('student-watermark');
+        const playerContainer = document.getElementById('videoPlayerContainer');
+        
+        const titleText = lectureDetails ? `Lecture ${lectureNum} - ${lectureDetails}` : `Lecture ${lectureNum}`;
+        document.getElementById('modal-title').innerText = titleText;
+        watermark.innerText = currentUserEmail;
+        currentVideoId = videoId;
+
+        playerContainer.innerHTML = `<iframe id="yt-iframe" src="https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&rel=0&modestbranding=1&controls=1&fs=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute top-0 left-0 w-full h-full border-0 z-10"></iframe>`;
+
+        setTimeout(() => {
+            if (typeof YT !== 'undefined' && YT.Player) {
+                window.player = new YT.Player('yt-iframe', {
+                    events: { 'onStateChange': window.onPlayerStateChange }
+                });
+            }
+        }, 500);
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+        }, 10);
+
+        try {
+            if (modal.requestFullscreen) {
+                modal.requestFullscreen().then(() => {
+                    if (screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').catch(() => { });
+                    }
+                }).catch(() => { });
+            } else if (modal.webkitRequestFullscreen) { 
+                modal.webkitRequestFullscreen();
+            }
+        } catch (err) { console.log("Orientation lock not supported", err); }
+    };
+
+    window.closeVideo = function() {
+        const modal = document.getElementById('videoModal');
+        const modalContent = document.getElementById('videoModalContent');
+        
+        modal.classList.add('opacity-0');
+        modalContent.classList.add('scale-95');
+        
+        if (window.player && typeof window.player.stopVideo === 'function') {
+            clearInterval(progressTimer);
+            window.saveProgress(); 
+            window.player.stopVideo();
+        }
+
+        document.getElementById('videoPlayerContainer').innerHTML = '';
+        window.player = null;
+
+        try {
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+            if (screen.orientation && screen.orientation.unlock) {
+                screen.orientation.unlock();
+            }
+        } catch (err) { console.log("Unlock failed", err); }
+        
+        setTimeout(() => { modal.classList.add('hidden'); }, 300);
+    };
+
+    function updateGlobalStatsUI() {
+        let totalWatchedSec = 0;
+        let completedLectures = 0;
+
+        for (const vid in userProgressData) {
+            totalWatchedSec += userProgressData[vid].watchedSeconds || 0;
+            if (userProgressData[vid].percentage >= 90) {
+                completedLectures++;
+            }
+        }
+
+        const hours = Math.floor(totalWatchedSec / 3600);
+        const mins = Math.floor((totalWatchedSec % 3600) / 60);
+
+        document.getElementById('stat-time').innerText = `${hours}h ${mins}m`;
+        document.getElementById('stat-completed').innerText = `${completedLectures} / ${totalLecturesCount} Lectures`;
+
+        let globalPercent = totalLecturesCount > 0 ? Math.floor((completedLectures / totalLecturesCount) * 100) : 0;
+        document.getElementById('stat-progress-bar').style.width = `${globalPercent}%`;
+    }
+
+    // Security check on load
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUserEmail = user.email;
+            try {
+                await verifyAndLoadLectures();
+            } catch(e) {
+                console.error(e);
+            } finally {
+                showMainContent();
+            }
+        } else {
+            window.location.replace("index.html");
+        }
+    });
+
+    async function verifyAndLoadLectures() {
+        const urlParams = new URLSearchParams(window.location.search);
+        currentSessionYear = urlParams.get('year');
+        currentClassName = urlParams.get('class');
+        const chapterName = urlParams.get('chapter');
+        
+        if (currentClassName && currentSessionYear) {
+            document.getElementById('back-btn').href = `chapters.html?class=${encodeURIComponent(currentClassName)}&year=${currentSessionYear}`;
+        } else {
+            document.getElementById('back-btn').href = `study.html`;
+        }
+
+        // STEP 1: Securely verify access through the custom Render Backend
+        const accessResponse = await fetch(`${BACKEND_URL}/api/students/access/check?email=${encodeURIComponent(currentUserEmail)}&className=${encodeURIComponent(currentClassName)}&year=${encodeURIComponent(currentSessionYear)}`);
+        const accessData = await accessResponse.json();
+        
+        if (!accessResponse.ok || !accessData.hasAccess) {
+            alert("Security Alert: You do not have access to this premium batch!");
+            window.location.replace(`chapters.html?class=${encodeURIComponent(currentClassName)}&year=${currentSessionYear}`);
+            return;
+        }
+
+        if (currentClassName && currentSessionYear && chapterName) {
+            document.getElementById('page-title').innerText = `${currentClassName} - ${chapterName}`;
+            document.getElementById('chapter-title').innerText = chapterName;
+            document.getElementById('chapter-subtitle').innerText = `${currentClassName} Physics | ${currentSessionYear} Session`;
+        }
+
+        // Fetch User Progress (from Firebase)
+        try {
+            const progressDocs = await getDocs(collection(db, 'student_progress', `${currentUserEmail}_${currentClassName}_${currentSessionYear}`, 'videos'));
+            progressDocs.forEach(d => {
+                userProgressData[d.id] = d.data();
+            });
+        } catch(e) {
+            console.error("Could not load progress", e);
+        }
+
+        // STEP 2: Fetch Lectures from the secure Render Backend MongoDB
+        const materialsResponse = await fetch(`${BACKEND_URL}/api/materials?className=${encodeURIComponent(currentClassName)}&year=${encodeURIComponent(currentSessionYear)}`);
+        const materialsData = await materialsResponse.json();
+        
+        const container = document.getElementById('lectures-container');
+        container.innerHTML = ''; 
+
+        // Filter lectures for the specific chapter
+        const lecturesArray = materialsData.filter(data => String(data.chapter) === String(chapterName));
+
+        totalLecturesCount = lecturesArray.length;
+        updateGlobalStatsUI();
+
+        if (lecturesArray.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full bg-white p-8 rounded-xl shadow-sm text-center border border-gray-100">
+                    <div class="text-4xl mb-3 opacity-50">📂</div>
+                    <h3 class="text-lg font-bold text-gray-700">No videos yet</h3>
+                    <p class="text-sm text-gray-500 mt-2">Lectures for this chapter will be uploaded soon.</p>
+                </div>`;
+            return;
+        }
+
+        // Sort lectures in numerical order
+        lecturesArray.sort((a, b) => a.lecture - b.lecture);
+
+        // Inject Cards Dynamically
+        lecturesArray.forEach(l => {
+            const subjectName = l.subject ? l.subject : "Physics";
+            const rawLink = l.link || l.videoUrl || l.url || l.video_link || "";
+            const videoId = getYTVideoId(rawLink);
+            
+            // Thumbnail logic: using high-quality default
+            let thumbHtml = '';
+            if (videoId) {
+                thumbHtml = `<img src="https://i.ytimg.com/vi/${videoId}/hqdefault.jpg" 
+                    data-vid="${videoId}" 
+                    data-res="0"
+                    onerror="
+                        let resIdx = parseInt(this.getAttribute('data-res')) + 1;
+                        const resList = ['hqdefault.jpg', 'mqdefault.jpg', 'default.jpg'];
+                        if (resIdx < resList.length) {
+                            this.setAttribute('data-res', resIdx);
+                            this.src = 'https://i.ytimg.com/vi/' + this.getAttribute('data-vid') + '/' + resList[resIdx];
+                        } else {
+                            this.onerror = null;
+                            this.src = 'Logo_2.png';
+                        }
+                    "
+                    alt="Lecture ${l.lecture} Thumbnail" class="absolute top-0 left-0 w-full h-full object-cover">`;
+            } else {
+                thumbHtml = `<img src="Logo_2.png" alt="Lecture ${l.lecture} Thumbnail" class="absolute top-0 left-0 w-full h-full object-cover">`;
+            }
+            
+            const progress = userProgressData[videoId] ? userProgressData[videoId].percentage || 0 : 0;
+            const safeDetails = l.details ? l.details.replace(/'/g, "\\'").replace(/"/g, "&quot;") : '';
+            
+            // Text formatting to ensure it wraps correctly
+            const lectureTitleDisplay = l.details ? `Lecture ${l.lecture} <span class="text-sm font-medium text-gray-500 ml-2 border-l-2 border-[#e8d4f3] pl-2 break-words">${l.details}</span>` : `Lecture ${l.lecture}`;
+
+            // PDF Notes Card (Clean layout with only download icon)
+            const pdfNotesHtml = l.pdfLink ? `
+                <div class="bg-white rounded-xl shadow-sm border border-[#e8d4f3] p-3 flex justify-between items-center transition-all hover:shadow-md hover:border-[#7851a9] w-full mt-auto">
+                    <div class="flex items-center gap-2 overflow-hidden mr-2">
+                        <span class="text-xl">📄</span>
+                        <span class="text-sm font-bold text-gray-700 truncate">Class Notes Lecture ${l.lecture}</span>
+                    </div>
+                    <a href="${l.pdfLink}" target="_blank" onclick="event.stopPropagation();" title="Download Notes" class="bg-[#e8d4f3] text-[#7851a9] p-2.5 rounded-lg font-bold hover:bg-[#7851a9] hover:text-white transition-colors flex-shrink-0 flex items-center justify-center shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    </a>
+                </div>
+            ` : '';
+
+            container.innerHTML += `
+                <div class="flex flex-col gap-3 h-full">
+                    
+                    <!-- Main Video Card -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col hover:shadow-lg transition-all duration-300 border border-gray-100 h-full">
+                        
+                        <!-- Thumbnail Area (No onclick, pure image) -->
+                        <div class="relative w-full pt-[56.25%] bg-gray-200 overflow-hidden">
+                            ${thumbHtml}
+                            <div class="absolute bottom-0 left-0 w-full h-1.5 bg-gray-600 bg-opacity-50">
+                                <div id="progress-bar-${videoId}" class="h-full bg-green-500 transition-all duration-500" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Info Area -->
+                        <div class="p-4 flex flex-col flex-grow bg-white w-full">
+                            <div class="flex justify-between items-start mb-3 w-full">
+                                <h3 class="font-bold text-gray-800 text-lg flex-grow mr-3 break-words leading-snug">${lectureTitleDisplay}</h3>
+                                <span class="text-xs font-bold bg-[#e8d4f3] text-[#7851a9] px-2 py-1 rounded-full shadow-sm flex-shrink-0 mt-1">${subjectName}</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center mt-auto pt-3 border-t border-gray-50 mb-4">
+                                <p class="text-xs font-medium text-gray-500">Progress</p>
+                                <p id="progress-text-${videoId}" class="text-sm font-bold ${progress >= 90 ? 'text-green-600' : 'text-[#7851a9]'}\">${progress}%</p>
+                            </div>
+
+                            <!-- Watch Now Button -->
+                            <button onclick="playVideo('${videoId}', '${l.lecture}', '${safeDetails}')" class="w-full bg-[#7851a9] text-white py-3 rounded-lg font-bold hover:bg-[#5a3a7c] transform active:scale-95 transition-all shadow-md flex justify-center items-center gap-2 text-sm sm:text-base">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                                Watch Now
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PDF Card Injection -->
+                    ${pdfNotesHtml}
+
+                </div>
+            `;
+        });
+    }
+</script>
+
+</body>
+</html>
