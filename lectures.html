@@ -20,18 +20,33 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* Video Container Styles */
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background-color: #000; width: 100%; }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; z-index: 10; }
         
+        /* 🚨 ANTI-PIRACY TOP BLOCKER 🚨
+           This invisible layer blocks clicks on the YouTube Title and "Copy Link" buttons at the top,
+           while leaving the bottom controls (Play, Pause, Settings) fully accessible.
+        */
+        .top-blocker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 75px; /* Covers just the top header of YouTube */
+            z-index: 50;
+            background: transparent;
+        }
+
         /* Dynamic Watermark for Anti-Piracy */
         .watermark {
             position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
-            color: rgba(255, 255, 255, 0.1); 
+            color: rgba(255, 255, 255, 0.1); /* Very low opacity to prevent distraction */
             font-size: 1.2rem; 
             font-weight: bold; pointer-events: none; z-index: 20;
             user-select: none; white-space: nowrap; 
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5); 
-            animation: moveWatermark 90s infinite alternate linear; 
+            animation: moveWatermark 90s infinite alternate linear; /* Slow movement */
         }
         @keyframes moveWatermark {
             0% { top: 20%; left: 20%; } 25% { top: 80%; left: 30%; } 50% { top: 50%; left: 80%; }
@@ -43,19 +58,19 @@
         ::-webkit-scrollbar-thumb { background: #e8d4f3; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #7851a9; }
 
-        /* Fullscreen CSS Fixes */
+        /* Fullscreen CSS Fixes to ensure total blackout of background */
         #videoModal { background-color: #000 !important; }
-        #videoModalContent { background-color: #000; }
+        #videoModalContent { background-color: #000; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; }
 
         #videoModal:fullscreen { padding: 0 !important; background-color: #000; }
-        #videoModal:fullscreen #videoModalContent { max-width: 100%; height: 100vh; max-height: 100vh; border-radius: 0; display: block; }
-        #videoModal:fullscreen .video-container { height: 100vh; padding-bottom: 0; }
+        #videoModal:fullscreen #videoModalContent { max-width: 100%; height: 100vh; max-height: 100vh; border-radius: 0; display: flex; }
+        #videoModal:fullscreen .video-container { height: 100vh; padding-bottom: 0; flex-grow: 1; }
         #videoModal:fullscreen #video-top-bar { display: none !important; } 
         
         /* Safari Fullscreen Fixes */
         #videoModal:-webkit-full-screen { padding: 0 !important; background-color: #000; }
-        #videoModal:-webkit-full-screen #videoModalContent { width: 100vw; height: 100vh; border-radius: 0; display: block; }
-        #videoModal:-webkit-full-screen .video-container { height: 100vh; padding-bottom: 0; }
+        #videoModal:-webkit-full-screen #videoModalContent { width: 100vw; height: 100vh; border-radius: 0; display: flex; }
+        #videoModal:-webkit-full-screen .video-container { height: 100vh; padding-bottom: 0; flex-grow: 1; }
         #videoModal:-webkit-full-screen #video-top-bar { display: none !important; } 
     </style>
     <!-- Load YouTube IFrame API -->
@@ -111,15 +126,20 @@
 </div>
 
 <!-- In-Built Video Player Modal -->
-<div id="videoModal" class="hidden fixed inset-0 bg-black z-[9999] flex justify-center items-center p-0 sm:p-6 opacity-0 transition-opacity duration-300">
-    <div class="w-full max-w-5xl h-full sm:h-auto sm:max-h-[90vh] bg-black sm:rounded-xl overflow-hidden shadow-2xl transform scale-95 transition-transform duration-300 relative flex flex-col justify-center" id="videoModalContent">
+<div id="videoModal" class="hidden fixed inset-0 bg-black z-[9999] flex justify-center items-center p-0 sm:p-0 opacity-0 transition-opacity duration-300">
+    <div class="w-full max-w-6xl h-full sm:h-auto sm:max-h-screen bg-black sm:rounded-xl overflow-hidden shadow-2xl transform scale-95 transition-transform duration-300 relative flex flex-col justify-center" id="videoModalContent">
         
-        <div id="video-top-bar" class="bg-[#222] px-4 py-3 flex justify-between items-center z-30 relative absolute top-0 w-full sm:static">
+        <!-- Custom Top Bar (Hidden in native fullscreen) -->
+        <div id="video-top-bar" class="bg-[#111] px-4 py-3 flex justify-between items-center z-30 w-full shadow-md">
             <h3 class="text-gray-200 font-bold truncate pr-4 text-sm sm:text-base" id="modal-title">Lecture Video</h3>
-            <button onclick="closeVideo()" class="text-gray-400 hover:text-white text-3xl leading-none font-bold focus:outline-none">&times;</button>
+            <button onclick="closeVideo()" class="text-gray-400 hover:text-white text-4xl leading-none font-bold focus:outline-none">&times;</button>
         </div>
         
-        <div class="video-container w-full relative">
+        <!-- Video Player Area -->
+        <div class="video-container w-full relative flex-grow flex items-center bg-black">
+            <!-- 🚨 The invisible shield protecting the "Copy Link" area 🚨 -->
+            <div class="top-blocker" oncontextmenu="return false;"></div>
+            
             <div id="student-watermark" class="watermark"></div>
             <!-- The iframe will be dynamically injected here -->
             <div id="videoPlayerContainer" class="absolute top-0 left-0 w-full h-full"></div>
@@ -178,18 +198,14 @@
         if (!url) return null;
         let str = String(url).trim();
         
-        // 1. If it's already an 11 character ID
         if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
 
-        // 2. Extract from standard URLs, youtu.be, shorts
         let match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
         if (match && match[1]) return match[1];
 
-        // 3. Extract from an iframe embed code if pasted directly
         let iframeMatch = str.match(/embed\/([a-zA-Z0-9_-]{11})/);
         if (iframeMatch && iframeMatch[1]) return iframeMatch[1];
 
-        // 4. Aggressive fallback for dirty strings
         let aggressiveMatch = str.match(/(?:v=|embed\/|\/v\/|youtu\.be\/|\/e\/|watch\?v=|&v=|\?v=)([a-zA-Z0-9_-]{11})/);
         if (aggressiveMatch && aggressiveMatch[1]) return aggressiveMatch[1];
 
@@ -242,7 +258,8 @@
         }
     }
 
-    window.playVideo = function(videoId, lectureNum, lectureDetails = '') {
+    // 🚨 UPDATED PLAY VIDEO FUNCTION WITH AUTO-LANDSCAPE FORCE 🚨
+    window.playVideo = async function(videoId, lectureNum, lectureDetails = '') {
         if (!videoId || videoId === "null") {
             alert("Video Link is broken or not extracted properly! Please contact the admin.");
             return;
@@ -262,8 +279,9 @@
         watermark.innerText = currentUserEmail;
         currentVideoId = videoId;
 
-        // Configured for maximum privacy and minimal recommendations (rel=0 restricts to own channel)
-        playerContainer.innerHTML = `<iframe id="yt-iframe" src="https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&autoplay=1&rel=0&modestbranding=1&controls=1&fs=1&iv_load_policy=3" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute top-0 left-0 w-full h-full border-0 z-10"></iframe>`;
+        // Configured for maximum privacy: 
+        // disablekb=1 disables keyboard shortcuts, rel=0 restricts recommendations to own channel
+        playerContainer.innerHTML = `<iframe id="yt-iframe" src="https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&autoplay=1&rel=0&modestbranding=1&showinfo=0&controls=1&fs=1&iv_load_policy=3&disablekb=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute top-0 left-0 w-full h-full border-0 z-10"></iframe>`;
 
         setTimeout(() => {
             if (typeof YT !== 'undefined' && YT.Player) {
@@ -273,23 +291,30 @@
             }
         }, 500);
         
+        // Show the modal
         modal.classList.remove('hidden');
         setTimeout(() => {
             modal.classList.remove('opacity-0');
             modalContent.classList.remove('scale-95');
         }, 10);
 
+        // 🔄 ATTEMPT TO FORCE FULLSCREEN AND AUTO-LANDSCAPE MODE ON MOBILE
         try {
             if (modal.requestFullscreen) {
-                modal.requestFullscreen().then(() => {
-                    if (screen.orientation && screen.orientation.lock) {
-                        screen.orientation.lock('landscape').catch(() => { });
-                    }
-                }).catch(() => { });
-            } else if (modal.webkitRequestFullscreen) { 
-                modal.webkitRequestFullscreen();
+                await modal.requestFullscreen();
+            } else if (modal.webkitRequestFullscreen) { /* Safari */
+                await modal.webkitRequestFullscreen();
+            } else if (modal.msRequestFullscreen) { /* IE11 */
+                await modal.msRequestFullscreen();
             }
-        } catch (err) { console.log("Orientation lock not supported", err); }
+
+            // If fullscreen is successful, try to lock the orientation to landscape
+            if (screen.orientation && screen.orientation.lock) {
+                await screen.orientation.lock('landscape');
+            }
+        } catch (err) { 
+            console.warn("Auto-rotation or Fullscreen blocked by device settings.", err); 
+        }
     };
 
     window.closeVideo = function() {
@@ -308,6 +333,7 @@
         document.getElementById('videoPlayerContainer').innerHTML = '';
         window.player = null;
 
+        // Exit fullscreen and unlock orientation
         try {
             if (document.fullscreenElement || document.webkitFullscreenElement) {
                 if (document.exitFullscreen) {
@@ -431,7 +457,6 @@
             const rawLink = l.link || l.videoUrl || l.url || l.video_link || "";
             const videoId = getYTVideoId(rawLink);
             
-            // Thumbnail logic: upgraded extractor ensures this works reliably
             let thumbHtml = '';
             if (videoId) {
                 thumbHtml = `<img src="https://i.ytimg.com/vi/${videoId}/hqdefault.jpg" 
@@ -456,10 +481,8 @@
             const progress = userProgressData[videoId] ? userProgressData[videoId].percentage || 0 : 0;
             const safeDetails = l.details ? l.details.replace(/'/g, "\\'").replace(/"/g, "&quot;") : '';
             
-            // Text formatting to ensure it wraps correctly
             const lectureTitleDisplay = l.details ? `Lecture ${l.lecture} <span class="text-sm font-medium text-gray-500 ml-2 border-l-2 border-[#e8d4f3] pl-2 break-words">${l.details}</span>` : `Lecture ${l.lecture}`;
 
-            // PDF Notes Card (Clean layout with only download icon)
             const pdfNotesHtml = l.pdfLink ? `
                 <div class="bg-white rounded-xl shadow-sm border border-[#e8d4f3] p-3 flex justify-between items-center transition-all hover:shadow-md hover:border-[#7851a9] w-full mt-auto">
                     <div class="flex items-center gap-2 overflow-hidden mr-2">
@@ -475,10 +498,8 @@
             container.innerHTML += `
                 <div class="flex flex-col gap-3 h-full">
                     
-                    <!-- Main Video Card -->
                     <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col hover:shadow-lg transition-all duration-300 border border-gray-100 h-full">
                         
-                        <!-- Thumbnail Area (No onclick, pure image) -->
                         <div class="relative w-full pt-[56.25%] bg-gray-200 overflow-hidden">
                             ${thumbHtml}
                             <div class="absolute bottom-0 left-0 w-full h-1.5 bg-gray-600 bg-opacity-50">
@@ -486,7 +507,6 @@
                             </div>
                         </div>
 
-                        <!-- Info Area -->
                         <div class="p-4 flex flex-col flex-grow bg-white w-full">
                             <div class="flex justify-between items-start mb-3 w-full">
                                 <h3 class="font-bold text-gray-800 text-lg flex-grow mr-3 break-words leading-snug">${lectureTitleDisplay}</h3>
@@ -498,7 +518,6 @@
                                 <p id="progress-text-${videoId}" class="text-sm font-bold ${progress >= 90 ? 'text-green-600' : 'text-[#7851a9]'}\">${progress}%</p>
                             </div>
 
-                            <!-- Watch Now Button -->
                             <button onclick="playVideo('${videoId}', '${l.lecture}', '${safeDetails}')" class="w-full bg-[#7851a9] text-white py-3 rounded-lg font-bold hover:bg-[#5a3a7c] transform active:scale-95 transition-all shadow-md flex justify-center items-center gap-2 text-sm sm:text-base">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
                                 Watch Now
@@ -506,7 +525,6 @@
                         </div>
                     </div>
 
-                    <!-- PDF Card Injection -->
                     ${pdfNotesHtml}
 
                 </div>
